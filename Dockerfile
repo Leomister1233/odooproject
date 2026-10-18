@@ -19,7 +19,10 @@ RUN mkdir -p /app/staticfiles && chown django:django /app/staticfiles
 
 USER django
 
-RUN DJANGO_DEBUG=false DJANGO_SECRET_KEY=collectstatic-build-only python manage.py collectstatic --noinput
+RUN DJANGO_DEBUG=false \
+    DJANGO_SECRET_KEY=collectstatic-build-only \
+    DJANGO_ALLOWED_HOSTS=localhost \
+    python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
