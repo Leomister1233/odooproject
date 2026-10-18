@@ -1,0 +1,55 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Inventory Products{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Inventory / Products" title="Product register" copy="Review inventory-enabled products with current on-hand and forecasted quantity from Odoo." stat_label="Loaded" stat_value=products_pagination.total_count %}
+
+  <section class="card">
+    {% include "core/components/section_header.html" with title="Filter catalog" copy="Search the product catalog before opening the next stock workflow." %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_input.html" with label="Search" name="q" value=filters.q placeholder="Product name" %}
+        {% include "core/components/field_input.html" with label="SKU" name="sku" value=filters.sku placeholder="SKU" %}
+        {% include "core/components/field_select.html" with label="Category" name="category" options=categories value_key="id" label_key="name" empty_label="All categories" selected_value=filters.category %}
+        <div class="field-action">{% include "core/components/button.html" with label="Apply filters" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Products" copy="Inventory product records with stock visibility." chip_1="Rows" chip_1_value=products_pagination.total_count %}
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Product"|portal_t:request }}</th>
+            <th>{{ "SKU"|portal_t:request }}</th>
+            <th>{{ "Category"|portal_t:request }}</th>
+            <th>{{ "UoM"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "On hand"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Forecast"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in products %}
+          <tr>
+            <td><span class="record-title">{{ product.name|default:"-" }}</span></td>
+            <td>{{ product.default_code|default:"-" }}</td>
+            <td>{{ product.categ_id.1|default:"-" }}</td>
+            <td>{{ product.uom_id.1|default:"-" }}</td>
+            <td class="is-numeric">{{ product.qty_available|default:0|floatformat:2 }}</td>
+            <td class="is-numeric">{{ product.virtual_available|default:0|floatformat:2 }}</td>
+          </tr>
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=6 message="No inventory products available." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=products_pagination %}
+    </div>
+  </section>
+</div>
+{% endblock %}

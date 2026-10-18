@@ -1,0 +1,216 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Inventory - Workspace{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Inventory / Odoo stock" title="Inventory workspace" copy="Operate products, stock positions, warehouse locations, transfer documents, adjustments, and replenishment rules from the same shared shell." action_href="/inventory/transfers/create" action_label="Create transfer" action_variant="primary" secondary_action_href="/inventory/stock" secondary_action_label="Stock on hand" %}
+
+  <section class="stats-grid">
+    {% include "core/components/kpi_card.html" with label="Products" value=summary.product_count|default:0 note="Storable and consumable products in the inventory scope." %}
+    {% include "core/components/kpi_card.html" with label="Locations" value=summary.location_count|default:0 note="Active stock locations available in Odoo." %}
+    {% include "core/components/kpi_card.html" with label="On hand qty" value=summary.on_hand_quantity|default:0|floatformat:2 note="Summed quant quantity across the current data set." %}
+    {% include "core/components/kpi_card.html" with label="Open transfers" value=summary.open_transfer_count|default:0 note="Transfer orders not yet completed or cancelled." %}
+    {% include "core/components/kpi_card.html" with label="Rules to replenish" value=summary.replenishment_alert_count|default:0 note="Reordering rules with a current quantity to order." %}
+  </section>
+
+  <section class="page-grid-detail">
+    <article class="card">
+      {% include "core/components/section_header.html" with title="Transfer workload" copy="Current transfer queue split by operation type." %}
+      <div class="card__body">
+        <div class="info-grid">
+          {% include "core/components/info_card.html" with label="Incoming" value=summary.incoming_open|default:0 %}
+          {% include "core/components/info_card.html" with label="Outgoing" value=summary.outgoing_open|default:0 %}
+          {% include "core/components/info_card.html" with label="Internal" value=summary.internal_open|default:0 %}
+          {% include "core/components/info_card.html" with label="Reserved qty" value=summary.reserved_quantity|default:0|floatformat:2 %}
+        </div>
+      </div>
+    </article>
+
+    <article class="card">
+      {% include "core/components/section_header.html" with title="Core flows" copy="The workspace now covers the main live Odoo inventory flows." %}
+      <div class="card__body">
+        <div class="actions-stack">
+          <div class="info-card">
+            <p class="info-card__label">{{ "Products"|portal_t:request }}</p>
+            <p class="info-card__value">{{ "Review product catalog, stock on hand, and forecasted quantity."|portal_t:request }}</p>
+          </div>
+          <div class="info-card">
+            <p class="info-card__label">{{ "Transfers"|portal_t:request }}</p>
+            <p class="info-card__value">{{ "Create, confirm, reserve, validate, and cancel stock moves."|portal_t:request }}</p>
+            <p class="record-meta"><a href="/inventory/transfers" class="record-title">{{ "Open all transfers"|portal_t:request }}</a></p>
+          </div>
+          <div class="info-card">
+            <p class="info-card__label">{{ "Locations"|portal_t:request }}</p>
+            <p class="info-card__value">{{ "Inspect location balances and operational usage across the warehouse network."|portal_t:request }}</p>
+            <p class="record-meta"><a href="/inventory/locations" class="record-title">{{ "Open locations"|portal_t:request }}</a></p>
+          </div>
+          <div class="info-card">
+            <p class="info-card__label">{{ "Receipts"|portal_t:request }}</p>
+            <p class="info-card__value">{{ "Process inbound receipts and supplier-facing warehouse intake."|portal_t:request }}</p>
+            <p class="record-meta"><a href="/inventory/receipts" class="record-title">{{ "Open receipts"|portal_t:request }}</a></p>
+          </div>
+          <div class="info-card">
+            <p class="info-card__label">{{ "Deliveries"|portal_t:request }}</p>
+            <p class="info-card__value">{{ "Manage outbound delivery orders and customer shipment workload."|portal_t:request }}</p>
+            <p class="record-meta"><a href="/inventory/deliveries" class="record-title">{{ "Open deliveries"|portal_t:request }}</a></p>
+          </div>
+          <div class="info-card">
+            <p class="info-card__label">{{ "Internal Transfers"|portal_t:request }}</p>
+            <p class="info-card__value">{{ "Coordinate warehouse movements across stock zones and internal routes."|portal_t:request }}</p>
+            <p class="record-meta"><a href="/inventory/internal-transfers" class="record-title">{{ "Open internal transfers"|portal_t:request }}</a></p>
+          </div>
+          <div class="info-card">
+            <p class="info-card__label">{{ "Adjustments"|portal_t:request }}</p>
+            <p class="info-card__value">{{ "Set counted quantities and apply inventory corrections against live quants."|portal_t:request }}</p>
+            <p class="record-meta"><a href="/inventory/adjustments" class="record-title">{{ "Open adjustments"|portal_t:request }}</a></p>
+          </div>
+          <div class="info-card">
+            <p class="info-card__label">{{ "Replenishment"|portal_t:request }}</p>
+            <p class="info-card__value">{{ "Manage reordering rules and trigger replenishment from warehouse demand."|portal_t:request }}</p>
+            <p class="record-meta"><a href="/inventory/replenishment" class="record-title">{{ "Open replenishment"|portal_t:request }}</a></p>
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Recent transfers" copy="Most recent transfer documents fetched from Odoo." action_href="/inventory/transfers" action_label="Open transfers" action_variant="secondary" %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_input.html" with label="Reference" name="recent_reference" value=filters.recent_reference placeholder="Transfer reference" %}
+        <div>
+          <label class="field-label">{{ "State"|portal_t:request }}</label>
+          <select name="recent_state" class="field-control">
+            <option value="">{{ "All states"|portal_t:request }}</option>
+            <option value="draft" {% if filters.recent_state == 'draft' %}selected{% endif %}>{{ "Draft"|portal_t:request }}</option>
+            <option value="assigned" {% if filters.recent_state == 'assigned' %}selected{% endif %}>{{ "Ready"|portal_t:request }}</option>
+            <option value="done" {% if filters.recent_state == 'done' %}selected{% endif %}>{{ "Done"|portal_t:request }}</option>
+            <option value="cancel" {% if filters.recent_state == 'cancel' %}selected{% endif %}>{{ "Cancelled"|portal_t:request }}</option>
+          </select>
+        </div>
+        <div class="field-action">{% include "core/components/button.html" with label="Filter transfers" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Reference"|portal_t:request }}</th>
+            <th>{{ "Operation"|portal_t:request }}</th>
+            <th>{{ "From"|portal_t:request }}</th>
+            <th>{{ "To"|portal_t:request }}</th>
+            <th>{{ "Scheduled"|portal_t:request }}</th>
+            <th>{{ "State"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for transfer in summary.recent_transfers %}
+          <tr>
+            <td><a href="/inventory/transfers/{{ transfer.id }}" class="record-title">{{ transfer.name|default:"-" }}</a></td>
+            <td>{{ transfer.picking_type_id.1|default:transfer.picking_type_code|default:"-" }}</td>
+            <td><span class="cell-truncate">{{ transfer.location_id.1|default:"-" }}</span></td>
+            <td><span class="cell-truncate">{{ transfer.location_dest_id.1|default:"-" }}</span></td>
+            <td>{{ transfer.scheduled_date|default:"-" }}</td>
+            <td>
+              {% if transfer.state == "done" %}
+              {% include "core/components/badge.html" with badge_class="badge-paid" badge_text=transfer.state %}
+              {% elif transfer.state == "cancel" %}
+              {% include "core/components/badge.html" with badge_class="badge-overdue" badge_text=transfer.state %}
+              {% elif transfer.state == "assigned" %}
+              {% include "core/components/badge.html" with badge_class="badge-partial" badge_text=transfer.state %}
+              {% else %}
+              {% include "core/components/badge.html" with badge_class="badge-posted" badge_text=transfer.state %}
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=6 message="No transfer documents available." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=recent_transfers_pagination %}
+    </div>
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Low stock watchlist" copy="Products with zero or negative on-hand quantity in the current sample." action_href="/inventory/products" action_label="Open products" action_variant="secondary" %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_input.html" with label="Product / SKU / Category" name="low_stock_query" value=filters.low_stock_query placeholder="Search low stock list" %}
+        <div class="field-action">{% include "core/components/button.html" with label="Filter watchlist" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Product"|portal_t:request }}</th>
+            <th>{{ "SKU"|portal_t:request }}</th>
+            <th>{{ "Category"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "On hand"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Forecast"|portal_t:request }}</th>
+            <th>{{ "UoM"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in summary.low_stock_products %}
+          <tr>
+            <td><span class="record-title">{{ product.name|default:"-" }}</span></td>
+            <td>{{ product.default_code|default:"-" }}</td>
+            <td>{{ product.categ_id.1|default:"-" }}</td>
+            <td class="is-numeric">{{ product.qty_available|default:0|floatformat:2 }}</td>
+            <td class="is-numeric">{{ product.virtual_available|default:0|floatformat:2 }}</td>
+            <td>{{ product.uom_id.1|default:"-" }}</td>
+          </tr>
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=6 message="No low-stock products in the current sample." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=low_stock_pagination %}
+    </div>
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Replenishment watchlist" copy="Rules that currently require procurement or internal replenishment." action_href="/inventory/replenishment" action_label="Open replenishment" action_variant="secondary" %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_input.html" with label="Product / Warehouse / Location" name="replenishment_query" value=filters.replenishment_query placeholder="Search replenishment list" %}
+        <div class="field-action">{% include "core/components/button.html" with label="Filter replenishment" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Product"|portal_t:request }}</th>
+            <th>{{ "Warehouse"|portal_t:request }}</th>
+            <th>{{ "Location"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Forecast"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "To order"|portal_t:request }}</th>
+            <th>{{ "Trigger"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rule in summary.replenishment_rules %}
+          <tr>
+            <td><span class="record-title">{{ rule.product_id.1|default:"-" }}</span></td>
+            <td>{{ rule.warehouse_id.1|default:"-" }}</td>
+            <td><span class="cell-truncate">{{ rule.location_id.1|default:"-" }}</span></td>
+            <td class="is-numeric">{{ rule.qty_forecast|default:0|floatformat:2 }}</td>
+            <td class="is-numeric">{{ rule.qty_to_order|default:0|floatformat:2 }}</td>
+            <td>{{ rule.trigger|default:"-" }}</td>
+          </tr>
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=6 message="No replenishment rules currently require action." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=replenishment_watch_pagination %}
+    </div>
+  </section>
+</div>
+{% endblock %}

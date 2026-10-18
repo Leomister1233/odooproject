@@ -1,0 +1,61 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Create Transfer{% endblock %}
+
+{% block content %}
+<form method="post" class="page-stack">
+  {% csrf_token %}
+
+  {% if default_operation == "incoming" %}
+  {% include "core/components/page_header.html" with eyebrow="Inventory / Receipt creation" title="Create receipt" copy="Build an inbound stock receipt with source, destination, and product lines before confirming it in Odoo." action_href="/inventory/receipts" action_label="Back to receipts" action_variant="secondary" %}
+  {% elif default_operation == "outgoing" %}
+  {% include "core/components/page_header.html" with eyebrow="Inventory / Delivery creation" title="Create delivery" copy="Build an outbound delivery order with source, destination, and product lines before confirming it in Odoo." action_href="/inventory/deliveries" action_label="Back to deliveries" action_variant="secondary" %}
+  {% elif default_operation == "internal" %}
+  {% include "core/components/page_header.html" with eyebrow="Inventory / Internal transfer creation" title="Create internal transfer" copy="Build an internal stock move between warehouse locations and operational zones." action_href="/inventory/internal-transfers" action_label="Back to internal transfers" action_variant="secondary" %}
+  {% else %}
+  {% include "core/components/page_header.html" with eyebrow="Inventory / Transfer creation" title="Create transfer" copy="Build a stock transfer with source, destination, and product lines before confirming it in Odoo." action_href="/inventory/transfers" action_label="Back to transfers" action_variant="secondary" %}
+  {% endif %}
+
+  <section class="card">
+    {% include "core/components/section_header.html" with title="Transfer header" copy="Enter the main transfer details before adding product lines." %}
+    <div class="card__body">
+      <div class="form-grid form-grid--4">
+        {% include "core/components/field_select.html" with label="Operation type" name="picking_type_id" options=picking_types value_key="id" label_key="name" empty_label="Select operation type" required=True %}
+        {% include "core/components/field_select.html" with label="Source location" name="source_location_id" options=locations value_key="id" label_key="complete_name" empty_label="Default from operation" %}
+        {% include "core/components/field_select.html" with label="Destination location" name="destination_location_id" options=locations value_key="id" label_key="complete_name" empty_label="Default from operation" %}
+        {% include "core/components/field_input.html" with label="Scheduled date" name="scheduled_date" type="datetime-local" %}
+        {% include "core/components/field_input.html" with wrapper_class="span-2" label="Origin / Reference" name="origin" placeholder="Sales order, procurement, or internal note" %}
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    {% include "core/components/section_header.html" with title="Transfer lines" copy="Add one or more products with planned quantities." action_type="button" action_id="add-transfer-line-btn" action_label="Add line" action_variant="secondary" %}
+    <div class="card__body">
+      <div id="transfer-lines" class="page-stack">
+        <div class="line-card">
+          <div class="line-card__header">
+            <p data-transfer-line-index class="line-card__title">{{ "Line"|portal_t:request }} 1</p>
+            {% include "core/components/button.html" with label="Remove" type="button" variant="secondary" extra_classes="remove-transfer-line-btn hidden" %}
+          </div>
+          <div class="form-grid form-grid--12">
+            {% include "core/components/field_select.html" with wrapper_class="span-8" label="Product" name="product_id" options=products value_key="id" label_key="name" empty_label="Select product" required=True %}
+            {% include "core/components/field_input.html" with wrapper_class="span-4" label="Quantity" name="quantity" type="number" step="0.01" value="1" required=True %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    {% include "core/components/section_header.html" with title="Submit transfer" copy="The transfer is created and confirmed in Odoo immediately after submission." %}
+    <div class="card__body card__body--compact">
+      <div class="actions-row">
+        {% include "core/components/button.html" with href="/inventory/transfers" label="Cancel" variant="secondary" %}
+        {% include "core/components/button.html" with label="Create transfer" type="submit" variant="primary" %}
+      </div>
+    </div>
+  </section>
+</form>
+{% endblock %}

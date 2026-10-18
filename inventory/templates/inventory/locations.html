@@ -1,0 +1,64 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Inventory Locations{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Inventory / Locations" title="Stock locations" copy="Review operational stock locations and their aggregated quant balances." stat_label="Loaded" stat_value=rows_pagination.total_count %}
+
+  <section class="card">
+    {% include "core/components/section_header.html" with title="Filter locations" copy="Restrict the view to a specific location usage type." %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        <div>
+          <label class="field-label">{{ "Usage"|portal_t:request }}</label>
+          <select name="usage" class="field-control">
+            <option value="">{{ "All usages"|portal_t:request }}</option>
+            <option value="internal" {% if filters.usage == 'internal' %}selected{% endif %}>{{ "Internal"|portal_t:request }}</option>
+            <option value="supplier" {% if filters.usage == 'supplier' %}selected{% endif %}>{{ "Supplier"|portal_t:request }}</option>
+            <option value="customer" {% if filters.usage == 'customer' %}selected{% endif %}>{{ "Customer"|portal_t:request }}</option>
+            <option value="inventory" {% if filters.usage == 'inventory' %}selected{% endif %}>{{ "Inventory"|portal_t:request }}</option>
+            <option value="transit" {% if filters.usage == 'transit' %}selected{% endif %}>{{ "Transit"|portal_t:request }}</option>
+          </select>
+        </div>
+        {% include "core/components/field_input.html" with label="Location" name="location" value=filters.location placeholder="Location name" %}
+        <div class="field-action">{% include "core/components/button.html" with label="Apply filters" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Locations" copy="Active stock locations with aggregated quant visibility." chip_1="Rows" chip_1_value=rows_pagination.total_count %}
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Location"|portal_t:request }}</th>
+            <th>{{ "Usage"|portal_t:request }}</th>
+            <th class="is-center">{{ "Quant Lines"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Quantity"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Reserved"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Available"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td><span class="record-title">{{ row.complete_name|default:row.name|default:"-" }}</span></td>
+            <td>{{ row.usage|default:"-"|portal_t:request }}</td>
+            <td class="is-center">{{ row.line_count|default:0 }}</td>
+            <td class="is-numeric">{{ row.quantity|default:0|floatformat:2 }}</td>
+            <td class="is-numeric">{{ row.reserved_quantity|default:0|floatformat:2 }}</td>
+            <td class="is-numeric">{{ row.available_quantity|default:0|floatformat:2 }}</td>
+          </tr>
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=6 message="No stock locations available." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=rows_pagination %}
+    </div>
+  </section>
+</div>
+{% endblock %}

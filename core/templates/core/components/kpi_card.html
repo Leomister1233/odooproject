@@ -1,0 +1,5 @@
+{% load ui_extras %}
+<article class="kpi-card">
+  <span class="kpi-card__icon" aria-hidden="true"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg></span>
+  <div><p class="kpi-label">{{ label|portal_t:request }}</p><p class="kpi-value">{{ value }}</p>{% if note %}<p class="kpi-note">{{ note|portal_t:request }}</p>{% endif %}</div>
+</article>

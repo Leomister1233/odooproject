@@ -1,0 +1,7 @@
+{% extends "core/base.html" %}
+{% block title %}{{ document.document_number }} - Fiscal document{% endblock %}
+{% block content %}<div class="page-stack">
+{% include "core/components/page_header.html" with eyebrow="Fiscal document" title=document.document_number copy="Submission evidence and immutable source snapshot." %}
+<section class="card"><div class="card__body"><dl class="detail-grid"><div><dt>Status</dt><dd>{{ document.get_state_display }}</dd></div><div><dt>Snapshot hash</dt><dd class="cell-truncate">{{ document.snapshot_hash }}</dd></div><div><dt>AGT request</dt><dd>{{ document.agt_request_id|default:"Not submitted" }}</dd></div><div><dt>Created</dt><dd>{{ document.created_at }}</dd></div></dl></div></section>
+<section class="card">{% include "core/components/section_header.html" with title="Audit events" copy="Append-only fiscal lifecycle history." %}<div class="table-wrap"><table class="data-table"><thead><tr><th>Time</th><th>Action</th><th>Transition</th><th>Reason</th></tr></thead><tbody>{% for event in document.events.all %}<tr><td>{{ event.created_at }}</td><td>{{ event.action }}</td><td>{{ event.previous_state|default:"-" }} → {{ event.new_state|default:"-" }}</td><td>{{ event.reason|default:"-" }}</td></tr>{% empty %}{% include "core/components/empty_state.html" with colspan=4 message="No audit events recorded." %}{% endfor %}</tbody></table></div></section>
+</div>{% endblock %}

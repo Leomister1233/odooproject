@@ -1,0 +1,77 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Inventory Adjustments{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Inventory / Adjustments" title="Inventory adjustments" copy="Set counted quantities against live Odoo quants and apply inventory corrections directly from the workspace." stat_label="Loaded" stat_value=rows_pagination.total_count %}
+
+  <section class="card">
+    {% include "core/components/section_header.html" with title="Filter quants" copy="Limit the adjustment queue to a product or stock location." %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_select.html" with label="Product" name="product_id" options=products value_key="id" label_key="name" empty_label="All products" selected_value=filters.product_id %}
+        {% include "core/components/field_select.html" with label="Location" name="location_id" options=locations value_key="id" label_key="complete_name" empty_label="All locations" selected_value=filters.location_id %}
+        {% include "core/components/field_input.html" with label="Inventory date from" name="inventory_date_from" type="date" value=filters.inventory_date_from %}
+        <label class="toggle-tile">
+          <input type="checkbox" name="outdated_only" {% if filters.outdated_only == 'on' %}checked{% endif %}>
+          <span>{{ "Outdated only"|portal_t:request }}</span>
+        </label>
+        <div class="field-action">{% include "core/components/button.html" with label="Apply filters" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Counted quantities" copy="Review counted quantities and apply stock corrections from the inventory workspace." chip_1="Rows" chip_1_value=rows_pagination.total_count action_href="/inventory/stock" action_label="Open stock" action_variant="secondary" %}
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Product"|portal_t:request }}</th>
+            <th>{{ "Location"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "On hand"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Reserved"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Available"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Counted"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Diff"|portal_t:request }}</th>
+            <th>{{ "Inventory Date"|portal_t:request }}</th>
+            <th>{{ "Apply"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td><span class="record-title">{{ row.product_id.1|default:"-" }}</span></td>
+            <td><span class="cell-truncate">{{ row.location_id.1|default:"-" }}</span></td>
+            <td class="is-numeric">{{ row.quantity|default:0|floatformat:2 }}</td>
+            <td class="is-numeric">{{ row.reserved_quantity|default:0|floatformat:2 }}</td>
+            <td class="is-numeric">{{ row.available_quantity|default:0|floatformat:2 }}</td>
+            <td class="is-numeric">{{ row.counted_quantity|default:0|floatformat:2 }}</td>
+            <td class="is-numeric">{{ row.inventory_diff_quantity|default:0|floatformat:2 }}</td>
+            <td>
+              {{ row.inventory_date|default:"-" }}
+              {% if row.is_outdated %}
+              <span class="record-meta">{{ "Outdated"|portal_t:request }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <form method="post" class="table-form">
+                {% csrf_token %}
+                <input type="hidden" name="quant_id" value="{{ row.id }}">
+                <input type="number" step="0.01" name="counted_quantity" value="{{ row.counted_quantity|default:0 }}" class="field-input table-form__input" required>
+                <button type="submit" class="btn btn--secondary">{{ "Apply"|portal_t:request }}</button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=9 message="No stock quants available for adjustment." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=rows_pagination %}
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% load ui_extras %}
+<tr>
+  <td>
+    <div class="record-inline">
+      <span class="record-dot" aria-hidden="true"></span>
+      <div>
+        <div class="record-title">{{ customer.name|default:"-" }}</div>
+        <span class="record-meta">{{ "Customer"|portal_t:request }}</span>
+      </div>
+    </div>
+  </td>
+  <td><span class="cell-truncate">{{ customer.email|default:"-" }}</span></td>
+  <td><span class="cell-truncate">{{ customer.phone|default:"-" }}</span></td>
+  <td class="is-numeric">#{{ customer.id }}</td>
+</tr>

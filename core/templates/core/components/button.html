@@ -1,0 +1,6 @@
+{% load ui_extras %}
+{% if href %}
+<a{% if id_attr %} id="{{ id_attr }}"{% endif %} href="{{ href }}" class="btn {% if variant == 'secondary' %}btn--secondary{% else %}btn--primary{% endif %}{% if block %} btn--block{% endif %}{% if extra_classes %} {{ extra_classes }}{% endif %}">{{ label|portal_t:request }}</a>
+{% else %}
+<button{% if id_attr %} id="{{ id_attr }}"{% endif %}{% if type %} type="{{ type }}"{% endif %} class="btn {% if variant == 'secondary' %}btn--secondary{% else %}btn--primary{% endif %}{% if block %} btn--block{% endif %}{% if extra_classes %} {{ extra_classes }}{% endif %}">{{ label|portal_t:request }}</button>
+{% endif %}

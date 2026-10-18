@@ -1,0 +1,30 @@
+{% load ui_extras %}
+<div class="sidebar__inner">
+  <div class="sidebar__brand">
+    <span class="sidebar__brand-mark" aria-hidden="true">
+      <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg>
+    </span>
+    <span class="sidebar__brand-copy">
+      <strong>Accounting Portal</strong>
+      <small>{% if platform_is_admin %}Platform administration{% elif company_is_admin %}Company administration{% else %}{{ current_client.name|default:"Company workspace" }}{% endif %}</small>
+    </span>
+  </div>
+
+  {% for section in client_navigation %}
+  <section class="sidebar__section">
+    <div class="sidebar__label">{{ section.label|portal_t:request }}</div>
+    <nav class="sidebar__nav">
+      {% for item in section.items %}
+      {% include "core/components/sidebar_nav_item.html" with href=item.href is_active=item.is_active icon_name=item.icon_name title=item.title meta=item.meta %}
+      {% endfor %}
+    </nav>
+  </section>
+  {% empty %}
+  <section class="sidebar__section">
+    <div class="sidebar__label">{{ "Workspace"|portal_t:request }}</div>
+    <nav class="sidebar__nav">
+      {% include "core/components/sidebar_nav_item.html" with href="/dashboard" is_active=True icon_name="overview" title="Overview" meta="Shell and quick access" %}
+    </nav>
+  </section>
+  {% endfor %}
+</div>

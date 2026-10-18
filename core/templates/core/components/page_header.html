@@ -1,0 +1,28 @@
+{% load ui_extras %}
+<section class="card">
+  <div class="card__header">
+    <div>
+      {% if eyebrow %}
+      <p class="page-eyebrow">{{ eyebrow|portal_t:request }}</p>
+      {% endif %}
+      <h1 class="page-title">{{ title|portal_t:request }}</h1>
+      {% if copy %}
+      <p class="page-copy">{{ copy|portal_t:request }}</p>
+      {% endif %}
+    </div>
+
+    {% if stat_label and stat_value %}
+    <div class="stat-pill">
+      <span class="stat-pill__label">{{ stat_label|portal_t:request }}</span>
+      <span class="stat-pill__value">{{ stat_value }}</span>
+    </div>
+    {% elif action_href and action_label %}
+    <div class="actions-row">
+      {% if secondary_action_href and secondary_action_label %}
+      {% include "core/components/button.html" with href=secondary_action_href label=secondary_action_label variant="secondary" %}
+      {% endif %}
+      {% include "core/components/button.html" with href=action_href label=action_label variant=action_variant %}
+    </div>
+    {% endif %}
+  </div>
+</section>

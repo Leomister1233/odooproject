@@ -1,0 +1,109 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Transfer Detail{% endblock %}
+
+{% block content %}
+{% if transfer %}
+<div class="page-stack">
+  <section class="card">
+    <div class="card__header">
+      <div>
+        <p class="page-eyebrow">{{ "Inventory / Transfer detail"|portal_t:request }}</p>
+        <h1 class="page-title">{{ transfer.name|default:"Transfer"|portal_t:request }}</h1>
+        <p class="page-copy">{{ "Review the transfer and move it through the standard Odoo stock workflow."|portal_t:request }}</p>
+      </div>
+      <div class="text-right">
+        <span class="chip chip--accent">{{ transfer.state|default:"-"|portal_t:request }}</span>
+        <p class="section-copy">{{ transfer.picking_type_id.1|default:transfer.picking_type_code|default:"-" }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-grid-detail">
+    <article class="card">
+      {% include "core/components/section_header.html" with title="Transfer metadata" copy="Header values sourced directly from Odoo stock operations." %}
+      <div class="card__body">
+        <div class="info-grid">
+          {% include "core/components/info_card.html" with label="Operation" value=transfer.picking_type_id.1|default:transfer.picking_type_code|default:"-" %}
+          {% include "core/components/info_card.html" with label="Origin" value=transfer.origin|default:"-" %}
+          {% include "core/components/info_card.html" with label="Source" value=transfer.location_id.1|default:"-" %}
+          {% include "core/components/info_card.html" with label="Destination" value=transfer.location_dest_id.1|default:"-" %}
+          {% include "core/components/info_card.html" with label="Scheduled" value=transfer.scheduled_date|default:"-" %}
+          {% include "core/components/info_card.html" with label="Completed" value=transfer.date_done|default:"-" %}
+        </div>
+      </div>
+    </article>
+
+    <article class="card">
+      {% include "core/components/section_header.html" with title="Workflow actions" copy="Drive the transfer forward using core Odoo stock actions." %}
+      <div class="card__body">
+        <div class="actions-stack">
+          <form method="post">{% csrf_token %}<input type="hidden" name="action" value="confirm">{% include "core/components/button.html" with label="Confirm" type="submit" variant="primary" block=True %}</form>
+          <form method="post">{% csrf_token %}<input type="hidden" name="action" value="reserve">{% include "core/components/button.html" with label="Reserve inventory" type="submit" variant="secondary" block=True %}</form>
+          <form method="post">{% csrf_token %}<input type="hidden" name="action" value="validate">{% include "core/components/button.html" with label="Validate transfer" type="submit" variant="secondary" block=True %}</form>
+          <form method="post">{% csrf_token %}<input type="hidden" name="action" value="cancel">{% include "core/components/button.html" with label="Cancel transfer" type="submit" variant="secondary" block=True %}</form>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Move lines" copy="Line-level stock moves linked to this transfer." %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_input.html" with label="Product" name="line_product" value=filters.line_product placeholder="Product" %}
+        {% include "core/components/field_input.html" with label="Description" name="line_description" value=filters.line_description placeholder="Description" %}
+        <div>
+          <label class="field-label">{{ "State"|portal_t:request }}</label>
+          <select name="line_state" class="field-control">
+            <option value="">{{ "All states"|portal_t:request }}</option>
+            <option value="draft" {% if filters.line_state == 'draft' %}selected{% endif %}>{{ "Draft"|portal_t:request }}</option>
+            <option value="confirmed" {% if filters.line_state == 'confirmed' %}selected{% endif %}>{{ "confirmed"|portal_t:request }}</option>
+            <option value="assigned" {% if filters.line_state == 'assigned' %}selected{% endif %}>{{ "Ready"|portal_t:request }}</option>
+            <option value="done" {% if filters.line_state == 'done' %}selected{% endif %}>{{ "Done"|portal_t:request }}</option>
+            <option value="cancel" {% if filters.line_state == 'cancel' %}selected{% endif %}>{{ "Cancelled"|portal_t:request }}</option>
+          </select>
+        </div>
+        <div class="field-action">{% include "core/components/button.html" with label="Filter lines" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Product"|portal_t:request }}</th>
+            <th>{{ "Description"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Planned Qty"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Done Qty"|portal_t:request }}</th>
+            <th>{{ "UoM"|portal_t:request }}</th>
+            <th>{{ "State"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in transfer.lines %}
+          <tr>
+            <td><span class="record-title">{{ line.product_id.1|default:"-" }}</span></td>
+            <td>{{ line.name|default:"-" }}</td>
+            <td class="is-numeric">{{ line.product_uom_qty|default:0|floatformat:2 }}</td>
+            <td class="is-numeric">{{ line.quantity|default:0|floatformat:2 }}</td>
+            <td>{{ line.product_uom.1|default:"-" }}</td>
+            <td>{{ line.state|default:"-"|portal_t:request }}</td>
+          </tr>
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=6 message="No move lines available for this transfer." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=transfer_lines_pagination %}
+    </div>
+  </section>
+</div>
+{% else %}
+<section class="card">
+  <div class="empty-state">
+    <p class="section-title">{{ "Transfer not found."|portal_t:request }}</p>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

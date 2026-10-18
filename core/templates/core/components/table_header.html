@@ -1,0 +1,25 @@
+{% load ui_extras %}
+<div class="card__header">
+  <div>
+    <h2 class="section-title">{{ title|portal_t:request }}</h2>
+    {% if copy %}
+    <p class="section-copy">{{ copy|portal_t:request }}</p>
+    {% endif %}
+  </div>
+
+  {% if action_href and action_label %}
+  <div class="actions-row">
+    {% include "core/components/button.html" with href=action_href label=action_label variant=action_variant %}
+  </div>
+  {% endif %}
+</div>
+
+{% if chip_1 or chip_2 or chip_3 %}
+<div class="card__body card__body--compact">
+  <div class="table-meta">
+    {% if chip_1 or chip_1_value %}<span class="chip">{% if chip_1_value %}{{ chip_1|portal_t:request }}: {{ chip_1_value }}{% else %}{{ chip_1|portal_t:request }}{% endif %}</span>{% endif %}
+    {% if chip_2 or chip_2_value %}<span class="chip">{% if chip_2_value %}{{ chip_2|portal_t:request }}: {{ chip_2_value }}{% else %}{{ chip_2|portal_t:request }}{% endif %}</span>{% endif %}
+    {% if chip_3 or chip_3_value %}<span class="chip">{% if chip_3_value %}{{ chip_3|portal_t:request }}: {{ chip_3_value }}{% else %}{{ chip_3|portal_t:request }}{% endif %}</span>{% endif %}
+  </div>
+</div>
+{% endif %}

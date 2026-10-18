@@ -1,0 +1,31 @@
+{% load static ui_extras %}
+{% portal_lang as current_portal_lang %}
+<!doctype html>
+<html lang="{{ current_portal_lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Accounting Portal{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}?v=20261018-1">
+  {% block page_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}app-page{% endblock %}">
+  <div class="app-shell" id="app-shell">
+    <button class="app-overlay" type="button" data-sidebar-dismiss aria-label="Close navigation"></button>
+    <aside class="sidebar" id="primary-navigation" aria-label="Primary navigation">
+      {% include "core/partials/sidebar.html" %}
+    </aside>
+    <div class="main">
+      <header class="topbar">
+        {% include "core/partials/topbar.html" %}
+      </header>
+      <main class="page-shell" id="main-content" tabindex="-1">
+        {% include "core/partials/flash_messages.html" %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  <script src="{% static 'js/app.js' %}?v=20261018-1"></script>
+  {% block page_js %}{% endblock %}
+</body>
+</html>

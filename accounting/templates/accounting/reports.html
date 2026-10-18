@@ -1,0 +1,88 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Reports - Accounting Portal{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Reporting / Accounting" title="Accounting reports" copy="High-level reporting over invoicing and receivables data sourced from Odoo customer invoices." action_href="/reports/tax-summary/" action_label="Tax summary" action_variant="secondary" secondary_action_href="/reports/aged-receivables/" secondary_action_label="Aged receivables" %}
+
+  <section class="stats-grid">
+    {% include "core/components/kpi_card.html" with label="Revenue" value=kpis.total_revenue|money:currency note="Posted invoice revenue in the current data set." %}
+    {% include "core/components/kpi_card.html" with label="Open invoices" value=kpis.open_invoices|default:0 note="Posted invoices not fully settled." %}
+    {% include "core/components/kpi_card.html" with label="Overdue" value=kpis.overdue_invoices|default:0 note="Invoices currently overdue." %}
+    {% include "core/components/kpi_card.html" with label="Outstanding" value=kpis.outstanding_receivables|money:currency note="Residual receivable amount still open." %}
+  </section>
+
+  <section class="page-grid-detail">
+    <article class="card">
+      {% include "core/components/section_header.html" with title="Monthly revenue" copy="Last six months of posted invoice amounts." %}
+      <div class="card__body">
+      <div class="chart-frame">
+        <canvas id="revenueChart" role="img" aria-label="Monthly posted revenue chart" data-labels='[{% for row in monthly_revenue %}"{{ row.month }}"{% if not forloop.last %},{% endif %}{% endfor %}]' data-values='[{% for row in monthly_revenue %}{{ row.amount }}{% if not forloop.last %},{% endif %}{% endfor %}]'></canvas>
+      </div>
+      </div>
+    </article>
+    <article class="card">
+      {% include "core/components/section_header.html" with title="Invoice mix" copy="Snapshot across draft, posted, paid, and overdue buckets." %}
+      <div class="card__body">
+      <div class="chart-frame">
+        <canvas id="statusChart" role="img" aria-label="Invoice status distribution chart" data-values='[{{ status_summary.draft|default:0 }},{{ status_summary.posted|default:0 }},{{ status_summary.paid|default:0 }},{{ status_summary.overdue|default:0 }}]'></canvas>
+      </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Recent invoices" copy="Recent customer invoices used for quick reporting review." action_href="/journal-entries" action_label="Journal entries" action_variant="secondary" %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_input.html" with label="Customer" name="customer" value=filters.customer placeholder="Customer" %}
+        <div>
+          <label class="field-label">{{ "State"|portal_t:request }}</label>
+          <select name="state" class="field-control">
+            <option value="">{{ "All states"|portal_t:request }}</option>
+            {% for value in report_states %}
+            <option value="{{ value }}" {% if filters.state == value %}selected{% endif %}>{{ value|portal_t:request }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="field-label">{{ "Payment state"|portal_t:request }}</label>
+          <select name="payment_state" class="field-control">
+            <option value="">{{ "All payment states"|portal_t:request }}</option>
+            {% for value in report_payment_states %}
+            <option value="{{ value }}" {% if filters.payment_state == value %}selected{% endif %}>{{ value|portal_t:request }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field-action">{% include "core/components/button.html" with label="Filter invoices" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Invoice"|portal_t:request }}</th>
+            <th>{{ "Customer"|portal_t:request }}</th>
+            <th>{{ "Date"|portal_t:request }}</th>
+            <th>{{ "Due"|portal_t:request }}</th>
+            <th>{{ "State"|portal_t:request }}</th>
+            <th>{{ "Payment"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Residual"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Total"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in recent_invoices %}
+          {% include "core/components/rows/invoice_report_row.html" with invoice=inv %}
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=8 message="No invoice data available." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=recent_invoices_pagination %}
+    </div>
+  </section>
+</div>
+{% endblock %}

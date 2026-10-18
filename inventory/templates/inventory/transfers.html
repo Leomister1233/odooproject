@@ -1,0 +1,80 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Inventory Transfers{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Inventory / Transfers" title="Transfer operations" copy="Review incoming, outgoing, and internal transfer orders from Odoo inventory." action_href="/inventory/transfers/create" action_label="Create transfer" action_variant="primary" %}
+
+  <section class="card">
+    {% include "core/components/section_header.html" with title="Filter transfers" copy="Use transfer state and operation type to narrow the operational queue." %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        <div>
+          <label class="field-label">{{ "Operation"|portal_t:request }}</label>
+          <select name="operation" class="field-control">
+            <option value="">{{ "All operations"|portal_t:request }}</option>
+            <option value="incoming" {% if filters.operation == 'incoming' %}selected{% endif %}>{{ "Incoming"|portal_t:request }}</option>
+            <option value="outgoing" {% if filters.operation == 'outgoing' %}selected{% endif %}>{{ "Outgoing"|portal_t:request }}</option>
+            <option value="internal" {% if filters.operation == 'internal' %}selected{% endif %}>{{ "Internal"|portal_t:request }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">{{ "State"|portal_t:request }}</label>
+          <select name="state" class="field-control">
+            <option value="">{{ "All states"|portal_t:request }}</option>
+            <option value="draft" {% if filters.state == 'draft' %}selected{% endif %}>{{ "Draft"|portal_t:request }}</option>
+            <option value="confirmed" {% if filters.state == 'confirmed' %}selected{% endif %}>{{ "confirmed"|portal_t:request }}</option>
+            <option value="assigned" {% if filters.state == 'assigned' %}selected{% endif %}>{{ "Ready"|portal_t:request }}</option>
+            <option value="done" {% if filters.state == 'done' %}selected{% endif %}>{{ "Done"|portal_t:request }}</option>
+            <option value="cancel" {% if filters.state == 'cancel' %}selected{% endif %}>{{ "Cancelled"|portal_t:request }}</option>
+          </select>
+        </div>
+        {% include "core/components/field_input.html" with label="Reference" name="reference" value=filters.reference placeholder="Transfer reference" %}
+        {% include "core/components/field_input.html" with label="Origin" name="origin" value=filters.origin placeholder="Source document" %}
+        {% include "core/components/field_input.html" with label="Scheduled from" name="scheduled_from" type="date" value=filters.scheduled_from %}
+        {% include "core/components/field_input.html" with label="Scheduled to" name="scheduled_to" type="date" value=filters.scheduled_to %}
+        <div class="field-action">{% include "core/components/button.html" with label="Apply filters" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Transfers" copy="Transfer documents across incoming, outgoing, and internal operations." chip_1="Rows" chip_1_value=transfers_pagination.total_count %}
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Reference"|portal_t:request }}</th>
+            <th>{{ "Operation"|portal_t:request }}</th>
+            <th>{{ "Origin"|portal_t:request }}</th>
+            <th>{{ "From"|portal_t:request }}</th>
+            <th>{{ "To"|portal_t:request }}</th>
+            <th>{{ "Scheduled"|portal_t:request }}</th>
+            <th>{{ "Done"|portal_t:request }}</th>
+            <th>{{ "State"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for transfer in transfers %}
+          <tr>
+            <td><a href="/inventory/transfers/{{ transfer.id }}" class="record-title">{{ transfer.name|default:"-" }}</a></td>
+            <td>{{ transfer.picking_type_id.1|default:transfer.picking_type_code|default:"-" }}</td>
+            <td>{{ transfer.origin|default:"-" }}</td>
+            <td><span class="cell-truncate">{{ transfer.location_id.1|default:"-" }}</span></td>
+            <td><span class="cell-truncate">{{ transfer.location_dest_id.1|default:"-" }}</span></td>
+            <td>{{ transfer.scheduled_date|default:"-" }}</td>
+            <td>{{ transfer.date_done|default:"-" }}</td>
+            <td>{{ transfer.state|default:"-"|portal_t:request }}</td>
+          </tr>
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=8 message="No transfer documents matched the current filters." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=transfers_pagination %}
+    </div>
+  </section>
+</div>
+{% endblock %}

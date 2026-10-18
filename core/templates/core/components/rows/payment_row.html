@@ -1,0 +1,9 @@
+{% load ui_extras %}
+<tr>
+  <td><span class="record-title">{{ payment.name|default:"-" }}</span></td>
+  <td><span class="cell-truncate">{{ payment.partner_id.1|default:"-" }}</span></td>
+  <td>{{ payment.date|default:"-" }}</td>
+  <td>{{ payment.payment_type|default:"-"|portal_t:request }}</td>
+  <td>{{ payment.state|default:"-"|portal_t:request }}</td>
+  <td class="is-numeric">{{ payment.amount|money:payment.currency_id }}</td>
+</tr>

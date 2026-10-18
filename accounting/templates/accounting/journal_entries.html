@@ -1,0 +1,68 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Journal Entries - Accounting Portal{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Accounting / Journal entries" title="Journal entries" copy="Review manual and system journal postings sourced from Odoo general ledger entries." stat_label="Loaded" stat_value=entries_pagination.total_count %}
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Entries register" action_href="/reports" action_label="Reports" action_variant="secondary" chip_1="Model `account.move`" %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_input.html" with label="Entry" name="entry_name" value=filters.entry_name placeholder="Entry name" %}
+        {% include "core/components/field_select.html" with label="Journal" name="journal_id" options=journals value_key="id" label_key="name" empty_label="All journals" selected_value=filters.journal_id %}
+        {% include "core/components/field_input.html" with label="Reference" name="reference" value=filters.reference placeholder="Reference" %}
+        <div>
+          <label class="field-label">State</label>
+          <select name="state" class="field-control">
+            <option value="">All states</option>
+            {% for value in states %}
+            <option value="{{ value }}" {% if filters.state == value %}selected{% endif %}>{{ value }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% include "core/components/field_input.html" with label="Date from" name="date_from" type="date" value=filters.date_from %}
+        {% include "core/components/field_input.html" with label="Date to" name="date_to" type="date" value=filters.date_to %}
+        <div class="field-action">{% include "core/components/button.html" with label="Filter entries" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Entry</th>
+            <th>Journal</th>
+            <th>Reference</th>
+            <th>Date</th>
+            <th>State</th>
+            <th class="is-numeric">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in entries %}
+          <tr>
+            <td><span class="record-title">{{ entry.name|default:"-" }}</span></td>
+            <td><span class="cell-truncate">{{ entry.journal_id.1|default:"-" }}</span></td>
+            <td><span class="cell-truncate">{{ entry.ref|default:"-" }}</span></td>
+            <td>{{ entry.date|default:"-" }}</td>
+            <td>
+              {% if entry.state == "draft" %}
+              {% include "core/components/badge.html" with badge_class="badge-draft" badge_text=entry.state %}
+              {% else %}
+              {% include "core/components/badge.html" with badge_class="badge-posted" badge_text=entry.state %}
+              {% endif %}
+            </td>
+            <td class="is-numeric">{{ entry.amount_total|money:entry.currency_id }}</td>
+          </tr>
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=6 message="No journal entries available." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=entries_pagination %}
+    </div>
+  </section>
+</div>
+{% endblock %}

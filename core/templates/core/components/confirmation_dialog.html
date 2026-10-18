@@ -1,0 +1,10 @@
+<dialog class="confirm-dialog" id="{{ dialog_id }}" aria-labelledby="{{ dialog_id }}-title">
+  <form method="dialog" class="confirm-dialog__body">
+    <h2 class="section-title" id="{{ dialog_id }}-title">{{ title }}</h2>
+    <p class="section-copy">{{ message }}</p>
+    <div class="actions-row">
+      <button class="btn btn--secondary" value="cancel" aria-label="Cancel">Cancel</button>
+      <button class="btn btn--primary" value="confirm" aria-label="Confirm">Confirm</button>
+    </div>
+  </form>
+</dialog>

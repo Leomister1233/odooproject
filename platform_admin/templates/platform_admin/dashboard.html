@@ -1,0 +1,44 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Platform Admin{% endblock %}
+{% block body_class %}app-page page-platform-admin{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-layout__main page-stack">
+    <section class="card admin-hero" id="overview">
+      <div><p class="page-eyebrow">Super Administration</p><h1 class="page-title">Platform Admin</h1><p class="page-copy">Manage companies, access, and connected workspaces.</p></div>
+      <a class="admin-create" href="/platform-admin/companies/create" aria-label="Create company" title="Create company"><svg aria-hidden="true" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg></a>
+    </section>
+    <section class="stats-grid admin-metrics" aria-label="Platform summary" id="users">
+      {% include "core/components/kpi_card.html" with label="Active companies" value=active_client_count note="Companies available to their assigned teams." %}
+      {% include "core/components/kpi_card.html" with label="Team members" value=team_member_count note="Users with an active company membership." %}
+      {% include "core/components/kpi_card.html" with label="Connected databases" value=connected_database_count note="Active Odoo database registrations." %}
+      {% include "core/components/kpi_card.html" with label="Pending imports" value=pending_import_count note="No import workflow is currently configured." %}
+    </section>
+    <section class="card registry-card" id="companies">
+      <div class="card__header registry-card__header">
+        <div><h2 class="section-title">Client registry</h2><p class="section-copy">Configure company access, databases, features, and releases.</p></div>
+        <form method="get" class="registry-search" role="search"><label class="sr-only" for="company-search">Search companies</label><input id="company-search" class="field-control" type="search" name="q" placeholder="Search companies" value="{{ request.GET.q }}"><button class="icon-button" type="submit" aria-label="Search companies" title="Search companies"><svg aria-hidden="true" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button></form>
+      </div>
+      <div class="registry-tabs" aria-label="Company status filters"><a{% if not request.GET.status %} class="is-active" aria-current="page"{% endif %} href="/platform-admin/companies">All companies</a><a{% if request.GET.status == 'active' %} class="is-active" aria-current="page"{% endif %} href="/platform-admin/companies?status=active">Active</a><a{% if request.GET.status == 'archived' %} class="is-active" aria-current="page"{% endif %} href="/platform-admin/companies?status=archived">Archived</a></div>
+      <div class="table-wrap" aria-label="Client registry">
+        <table class="data-table"><thead><tr><th>Company</th><th>Database</th><th>Status</th><th>Members</th><th>Last sync</th><th class="is-center">Actions</th></tr></thead><tbody>
+        {% for client in clients %}<tr>
+          <td><span class="record-inline"><span class="company-tile">{{ client.name|first|upper }}</span><span><span class="record-title">{{ client.name }}</span><span class="record-meta">{{ client.slug }}</span></span></span></td>
+          <td>{{ client.odoo_db|default:"Not connected" }}</td>
+          <td><span class="status-pill {% if client.is_active %}status-pill--success{% else %}status-pill--neutral{% endif %}"><i></i>{% if client.is_active %}Active{% else %}Archived{% endif %}</span></td>
+          <td>{{ client.member_count }}</td><td>{{ client.updated_at|date:"d M Y, H:i" }}</td>
+          <td class="is-center"><span class="row-action-set"><a class="icon-button" href="/platform-admin/{{ client.slug }}" aria-label="View {{ client.name }}" title="View {{ client.name }}"><svg aria-hidden="true" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></a><a class="icon-button" href="/platform-admin/{{ client.slug }}#settings" aria-label="Edit {{ client.name }}" title="Edit {{ client.name }}"><svg aria-hidden="true" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></a><a class="icon-button" href="/platform-admin/{{ client.slug }}#features" aria-label="More options for {{ client.name }}" title="More options for {{ client.name }}"><svg aria-hidden="true" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></a></span></td>
+        </tr>{% empty %}<tr><td colspan="6"><div class="empty-state">No companies have been configured.</div></td></tr>{% endfor %}
+        </tbody></table>
+      </div>
+      {% include "core/components/table_pagination.html" with pagination=company_pagination %}
+    </section>
+  </div>
+  <aside class="card activity-card" aria-labelledby="activity-title"><div class="card__header"><div><h2 class="section-title" id="activity-title">Recent activity</h2><p class="section-copy">Latest company configuration changes.</p></div></div><div class="activity-list">
+    {% for client in recent_clients %}<article class="activity-item"><span class="activity-item__marker"></span><div><strong>{{ client.name }}</strong><p>Company configuration updated.</p><time datetime="{{ client.updated_at|date:'c' }}">{{ client.updated_at|timesince }} ago</time></div></article>{% empty %}<div class="empty-state">No recent activity.</div>{% endfor %}
+  </div></aside>
+</div>
+{% endblock %}

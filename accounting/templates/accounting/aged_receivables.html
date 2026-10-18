@@ -1,0 +1,67 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Aged Receivables - Accounting Portal{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Reporting / Receivables aging" title="Aged receivables" copy="Open customer invoices grouped by overdue age so collections teams can prioritize follow-up." stat_label="As of" stat_value=today %}
+
+  <section class="card">
+    {% include "core/components/section_header.html" with title="Filter receivables" copy="Apply server-side filters before grouping invoices into aging buckets." %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_input.html" with label="Invoice" name="invoice" value=filters.invoice placeholder="Invoice number" %}
+        {% include "core/components/field_input.html" with label="Customer" name="customer" value=filters.customer placeholder="Customer" %}
+        <div>
+          <label class="field-label">{{ "Payment state"|portal_t:request }}</label>
+          <select name="payment_state" class="field-control">
+            <option value="">{{ "All payment states"|portal_t:request }}</option>
+            {% for value in payment_states %}
+            <option value="{{ value }}" {% if filters.payment_state == value %}selected{% endif %}>{{ value|portal_t:request }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field-action">{% include "core/components/button.html" with label="Filter receivables" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+  </section>
+
+  {% for key, bucket in buckets.items %}
+  <section class="card">
+    {% include "core/components/table_header.html" with title=bucket.label copy="Invoices bucketed by age from due date." chip_1="Invoices" chip_1_value=bucket.count chip_2="Due" chip_2_value=bucket.total|money:currency %}
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Invoice"|portal_t:request }}</th>
+            <th>{{ "Customer"|portal_t:request }}</th>
+            <th>{{ "Due Date"|portal_t:request }}</th>
+            <th class="is-center">{{ "Days Overdue"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Total"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Amount Due"|portal_t:request }}</th>
+            <th>{{ "Payment state"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in bucket.rows %}
+          <tr>
+            <td><span class="record-title">{{ row.invoice|default:"-" }}</span></td>
+            <td><span class="cell-truncate">{{ row.customer|default:"-" }}</span></td>
+            <td>{{ row.due_date|default:"-" }}</td>
+            <td class="is-center">{{ row.days_overdue }}</td>
+            <td class="is-numeric">{{ row.total_amount|money:row.currency_id }}</td>
+            <td class="is-numeric">{{ row.amount_due|money:row.currency_id }}</td>
+            <td>{{ row.payment_state|default:"-"|portal_t:request }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="empty-state">{{ "No invoices in this bucket."|portal_t:request }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=bucket.pagination %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

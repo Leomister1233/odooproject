@@ -1,0 +1,69 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Invoice Status Report - Accounting Portal{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Reporting / Invoice lifecycle" title="Invoice status report" copy="Status grouping across customer invoices by draft, posted, paid, partial, unpaid, and overdue states." %}
+
+  <section class="card">
+    {% include "core/components/section_header.html" with title="Filter invoice status" copy="Apply server-side filters before invoices are grouped into status buckets." %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_input.html" with label="Invoice" name="invoice" value=filters.invoice placeholder="Invoice number" %}
+        {% include "core/components/field_input.html" with label="Customer" name="customer" value=filters.customer placeholder="Customer" %}
+        <div>
+          <label class="field-label">{{ "State"|portal_t:request }}</label>
+          <select name="state" class="field-control">
+            <option value="">{{ "All states"|portal_t:request }}</option>
+            {% for value in states %}
+            <option value="{{ value }}" {% if filters.state == value %}selected{% endif %}>{{ value|portal_t:request }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="field-label">{{ "Payment state"|portal_t:request }}</label>
+          <select name="payment_state" class="field-control">
+            <option value="">{{ "All payment states"|portal_t:request }}</option>
+            {% for value in payment_states %}
+            <option value="{{ value }}" {% if filters.payment_state == value %}selected{% endif %}>{{ value|portal_t:request }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field-action">{% include "core/components/button.html" with label="Filter invoice status" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+  </section>
+
+  {% for status, group in groups.items %}
+  <section class="card">
+    {% include "core/components/table_header.html" with title=status|upper copy="Invoices grouped under this status bucket." chip_1="Count" chip_1_value=group.count chip_2="Total" chip_2_value=group.amount_total|money:currency chip_3="Residual" chip_3_value=group.residual_total|money:currency %}
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Invoice"|portal_t:request }}</th>
+            <th>{{ "Customer"|portal_t:request }}</th>
+            <th>{{ "Date"|portal_t:request }}</th>
+            <th>{{ "Due"|portal_t:request }}</th>
+            <th>{{ "State"|portal_t:request }}</th>
+            <th>{{ "Payment"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Residual"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Total"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in group.rows %}
+          {% include "core/components/rows/invoice_report_row.html" with invoice=inv %}
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=8 message="No invoices in this group." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=group.pagination %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

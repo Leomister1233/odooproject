@@ -1,0 +1,67 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Overview - Accounting Portal{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Overview" title="Receivables workspace" copy="This dashboard shows the current customer-invoice position, open receivables, and recent billing activity." %}
+
+  <section class="stats-grid">
+    {% include "core/components/kpi_card.html" with label="Posted revenue" value=metrics.total_revenue|money:currency note="Sum of posted customer invoices in the current sample." %}
+    {% include "core/components/kpi_card.html" with label="Open receivables" value=metrics.unpaid_total|money:currency note="Residual amount still awaiting settlement." %}
+    {% include "core/components/kpi_card.html" with label="Overdue invoices" value=metrics.overdue_count|default:0 note="Invoices past due date and not fully paid." %}
+    {% include "core/components/kpi_card.html" with label="Invoices loaded" value=metrics.invoice_count|default:0 note="Customer invoices fetched from Odoo." %}
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Recent invoices" copy="Latest customer invoices retrieved from Odoo for quick follow-up." action_href="/invoices" action_label="Open invoices" action_variant="secondary" %}
+    <div class="card__body">
+      <form method="get"
+        <label class="field-label">Status</label>
+        <select name="status" class="field-control">
+          <option value="">{{ "All statuses"|portal_t:request }}</option>
+          <option value="draft" {% if filters.status == 'draft' %}selected{% endif %}>{{ "Draft"|portal_t:request }}</option>
+          <option value="posted" {% if filters.status == 'posted' %}selected{% endif %}>{{ "Posted"|portal_t:request }}</option>
+          <option value="paid" {% if filters.status == 'paid' %}selected{% endif %}>{{ "Paid"|portal_t:request }}</option>
+          <option value="partial" {% if filters.status == 'partial' %}selected{% endif %}>{{ "Partial"|portal_t:request }}</option>
+          <option value="not_paid" {% if filters.status == 'not_paid' %}selected{% endif %}>{{ "Not paid"|portal_t:request }}</option>
+        </select>
+      </div>
+        <div class="field-action">{% include "core/components/button.html" with label="Filter invoices" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Invoice"|portal_t:request }}</th>
+            <th>{{ "Customer"|portal_t:request }}</th>
+            <th>{{ "Date"|portal_t:request }}</th>
+            <th>{{ "Due"|portal_t:request }}</th>
+            <th>{{ "Status"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Residual"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Amount"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in recent_invoices %}
+          <tr>
+            <td><a href="/invoices/{{ inv.id }}" class="record-title">{{ inv.name|default:"-" }}</a></td>
+            <td><span class="cell-truncate">{{ inv.partner_id.1|default:"-" }}</span></td>
+            <td>{{ inv.invoice_date|default:"-" }}</td>
+            <td>{{ inv.invoice_date_due|default:"-" }}</td>
+            <td>{% include "core/components/status_badge.html" with payment_state=inv.payment_state state=inv.state %}</td>
+            <td class="is-numeric">{{ inv.amount_residual|money:inv.currency_id }}</td>
+            <td class="is-numeric">{{ inv.amount_total|money:inv.currency_id }}</td>
+          </tr>
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=7 message="No invoices available from the connected Odoo instance." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=recent_invoices_pagination %}
+    </div>
+  </section>
+</div>
+{% endblock %}

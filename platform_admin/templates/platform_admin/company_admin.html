@@ -1,0 +1,29 @@
+{% extends "core/base.html" %}
+
+{% block title %}Company Administration{% endblock %}
+
+{% block content %}
+{% include "core/components/page_header.html" with eyebrow="Company Administration" title=company_record.name copy="Company-scoped workspace for authorized IT administrators. Platform-wide configuration is not exposed here." %}
+
+<section class="stats-grid">
+  {% include "core/components/kpi_card.html" with label="Active users" value=memberships|length note="Users currently assigned to this company." %}
+  {% include "core/components/kpi_card.html" with label="Odoo databases" value=odoo_databases|length note="Active Odoo registrations for this company." %}
+  {% include "core/components/kpi_card.html" with label="Template version" value=company_record.template_version note="Application template currently assigned." %}
+  {% include "core/components/kpi_card.html" with label="Currency" value=company_record.default_currency note="Default display currency." %}
+</section>
+
+<section class="content-grid content-grid--2">
+  <div class="card">
+    {% include "core/components/section_header.html" with title="Company users" copy="Membership and role visibility for this company only." %}
+    <div class="table-shell"><table class="data-table"><thead><tr><th>User</th><th>Role</th><th>Status</th></tr></thead><tbody>
+      {% for membership in memberships %}<tr><td>{{ membership.user.email|default:membership.user.username }}</td><td>{{ membership.get_role_display }}</td><td>{% if membership.is_active %}Active{% else %}Inactive{% endif %}</td></tr>{% empty %}<tr><td colspan="3">No users assigned.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </div>
+  <div class="card">
+    {% include "core/components/section_header.html" with title="Odoo connections" copy="Connection metadata is visible; encrypted credentials are never displayed." %}
+    <div class="table-shell"><table class="data-table"><thead><tr><th>Database</th><th>Server</th><th>Default</th></tr></thead><tbody>
+      {% for database in odoo_databases %}<tr><td>{{ database.database_name }}</td><td>{{ database.server_url }}</td><td>{% if database.is_default %}Yes{% else %}No{% endif %}</td></tr>{% empty %}<tr><td colspan="3">No Odoo database registered.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% load ui_extras %}
+<tr>
+  <td><span class="cell-truncate">{{ line.product_id.1|default:"-" }}</span></td>
+  <td><span class="record-title">{{ line.name|default:"-" }}</span></td>
+  <td class="is-center">{{ line.quantity }}</td>
+  <td class="is-numeric">{{ line.price_unit|money:currency }}</td>
+  <td><span class="cell-truncate">{{ line.tax_ids|default:"-" }}</span></td>
+  <td class="is-numeric">{{ line.price_subtotal|money:currency }}</td>
+  <td class="is-numeric">{{ line.price_total|money:currency }}</td>
+</tr>

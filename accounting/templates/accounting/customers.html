@@ -1,0 +1,55 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Customers - Accounting Portal{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Contacts / Customers" title="Customer register" copy="Customer records used across invoicing and collections. New accounts become available immediately in the billing workflow." stat_label="Loaded" stat_value=partners_pagination.total_count %}
+
+  <section class="card">
+    {% include "core/components/section_header.html" with title="Create customer" copy="Add a billing contact that becomes available immediately in the invoice flow." %}
+    <div class="card__body">
+      <form method="post" class="form-grid form-grid--inline">
+      {% csrf_token %}
+      {% include "core/components/field_input.html" with label="Customer name" name="name" placeholder="Northwind Trading Ltd." required=True %}
+      {% include "core/components/field_input.html" with label="Email" name="email" type="email" placeholder="billing@northwind.com" %}
+      {% include "core/components/field_input.html" with label="Phone" name="phone" placeholder="+351 000 000 000" %}
+      <div class="field-action">{% include "core/components/button.html" with label="Create" type="submit" variant="primary" %}</div>
+    </form>
+    </div>
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Customers" copy="Current customer records available for invoicing and account follow-up." chip_1="Active register" chip_2="Rows" chip_2_value=partners_pagination.total_count %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_input.html" with label="Name" name="name" value=filters.name placeholder="Customer name" %}
+        {% include "core/components/field_input.html" with label="Email" name="email" value=filters.email placeholder="Email" %}
+        {% include "core/components/field_input.html" with label="Phone" name="phone" value=filters.phone placeholder="Phone" %}
+        <div class="field-action">{% include "core/components/button.html" with label="Filter customers" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Name"|portal_t:request }}</th>
+            <th>{{ "Email"|portal_t:request }}</th>
+            <th>{{ "Phone"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Partner ID"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in partners %}
+          {% include "core/components/rows/customer_row.html" with customer=p %}
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=4 message="No customer records available." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=partners_pagination %}
+    </div>
+  </section>
+</div>
+{% endblock %}

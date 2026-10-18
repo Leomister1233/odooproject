@@ -1,0 +1,9 @@
+{% if payment_state == 'paid' %}
+  {% include "core/components/badge.html" with badge_class="badge-paid" badge_text=payment_state %}
+{% elif state == 'draft' %}
+  {% include "core/components/badge.html" with badge_class="badge-draft" badge_text=state %}
+{% elif payment_state == 'partial' %}
+  {% include "core/components/badge.html" with badge_class="badge-partial" badge_text=payment_state %}
+{% else %}
+  {% include "core/components/badge.html" with badge_class="badge-posted" badge_text=payment_state|default:state %}
+{% endif %}

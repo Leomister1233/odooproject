@@ -1,0 +1,30 @@
+{% extends "core/base.html" %}
+
+{% block title %}Create Company · Platform Admin{% endblock %}
+
+{% block content %}
+{% include "core/components/page_header.html" with eyebrow="Super Administration" title="Create company" copy="Create the company workspace first, then register its Odoo database and users." %}
+
+{% if error %}<div class="flash flash--danger">{{ error }}</div>{% endif %}
+
+<section class="card">
+  <div class="card__body">
+    <form method="post" class="form-grid form-grid--4">
+      {% csrf_token %}
+      <label class="form-field"><span>Company name</span><input name="name" required></label>
+      <label class="form-field"><span>URL slug</span><input name="slug" placeholder="acme-angola"></label>
+      <label class="form-field"><span>Company domain</span><input name="domain" placeholder="portal.acme.co.ao"></label>
+      <label class="form-field"><span>Default language</span><select name="default_language"><option value="en">English</option><option value="pt">Portuguese</option></select></label>
+      <label class="form-field"><span>Default currency</span><select name="default_currency"><option value="EUR">EUR</option><option value="USD">USD</option><option value="AOA">AOA</option></select></label>
+      <label class="form-field"><span>Company Odoo email</span><input type="email" name="odoo_username" autocomplete="username" required></label>
+      <label class="form-field"><span>Company Odoo password</span><input type="password" name="odoo_password" autocomplete="new-password" required></label>
+      <label class="form-field"><span>Login title</span><input name="login_title" placeholder="Welcome to ACME"></label>
+      <label class="form-field form-field--full"><span>Login message</span><textarea name="login_message" rows="3"></textarea></label>
+      <div class="actions-row form-field--full">
+        <a class="btn btn--secondary" href="/platform-admin">Cancel</a>
+        <button class="btn btn--primary" type="submit">Create company</button>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

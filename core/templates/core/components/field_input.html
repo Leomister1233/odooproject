@@ -1,0 +1,14 @@
+{% load ui_extras %}
+<div{% if wrapper_class %} class="{{ wrapper_class }}"{% endif %}>
+  <label class="field-label">{{ label|portal_t:request }}</label>
+  <input
+    name="{{ name }}"
+    {% if type %}type="{{ type }}"{% endif %}
+    class="field-control{% if input_class %} {{ input_class }}{% endif %}"
+    {% if value is not None %}value="{{ value }}"{% endif %}
+    {% if placeholder %}placeholder="{{ placeholder|portal_t:request }}"{% endif %}
+    {% if step %}step="{{ step }}"{% endif %}
+    {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+    {% if required %}required{% endif %}
+  >
+</div>

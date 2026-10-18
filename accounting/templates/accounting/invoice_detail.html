@@ -1,0 +1,104 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Invoice Detail - Accounting Portal{% endblock %}
+
+{% block content %}
+{% if invoice %}
+<div class="page-stack">
+  <section class="card">
+    <div class="card__header">
+      <div>
+        <p class="page-eyebrow">Invoicing / Detail</p>
+        <h1 class="page-title">{{ invoice.name|default:"Invoice"|portal_t:request }}</h1>
+        <p class="page-copy">{{ "Review the invoice, then post it or register a payment from the billing workflow."|portal_t:request }}</p>
+      </div>
+      <div class="text-right">
+        {% include "core/components/status_badge.html" with payment_state=invoice.payment_state state=invoice.state %}
+        <p class="section-copy">{{ invoice.partner_id.1|default:"-" }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-grid-detail">
+    <article class="card">
+      {% include "core/components/section_header.html" with title="Invoice metadata" copy="Header values sourced directly from Odoo." %}
+      <div class="card__body">
+        <div class="info-grid">
+          {% include "core/components/info_card.html" with label="Invoice date" value=invoice.invoice_date|default:"-" %}
+          {% include "core/components/info_card.html" with label="Due date" value=invoice.invoice_date_due|default:"-" %}
+          {% include "core/components/info_card.html" with label="Journal" value=invoice.journal_id.1|default:"-" %}
+          {% include "core/components/info_card.html" with label="Reference" value=invoice.ref|default:"-" %}
+          {% include "core/components/info_card.html" with label="Payment term" value=invoice.invoice_payment_term_id.1|default:"-" %}
+          {% include "core/components/info_card.html" with label="Currency" value=invoice.currency_id.1|default:"-" %}
+        </div>
+      </div>
+    </article>
+
+    <article class="card">
+      {% include "core/components/section_header.html" with title="Financial summary" copy="Outstanding and total values from Odoo." %}
+      <div class="card__body">
+        <div class="actions-stack">
+        {% include "core/components/kpi_card.html" with label="Invoice total" value=invoice.amount_total|money:invoice.currency_id note="Gross amount stored on the invoice." %}
+        {% include "core/components/kpi_card.html" with label="Outstanding" value=invoice.amount_residual|money:invoice.currency_id note="Residual amount still open for collection." %}
+        </div>
+        <div class="actions-stack mt-6">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="post">
+          {% include "core/components/button.html" with label="Post invoice" type="submit" variant="primary" block=True %}
+        </form>
+        <form method="post" class="form-grid form-grid--inline">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="payment">
+          {% include "core/components/field_input.html" with wrapper_class="span-3" label="Payment amount" name="amount" type="number" step="0.01" placeholder="Payment amount" required=True %}
+          <div class="field-action">{% include "core/components/button.html" with label="Register payment" type="submit" variant="secondary" %}</div>
+        </form>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Invoice lines" copy="Products, descriptions, taxes, and totals recorded on this invoice." %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_input.html" with label="Product" name="line_product" value=filters.line_product placeholder="Product" %}
+        {% include "core/components/field_input.html" with label="Description" name="line_description" value=filters.line_description placeholder="Line description" %}
+        {% include "core/components/field_input.html" with label="Tax" name="line_tax" value=filters.line_tax placeholder="Tax id or label" %}
+        <div class="field-action">{% include "core/components/button.html" with label="Filter lines" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Product"|portal_t:request }}</th>
+            <th>{{ "Description"|portal_t:request }}</th>
+            <th class="is-center">{{ "Qty"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Unit Price"|portal_t:request }}</th>
+            <th>{{ "Taxes"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Subtotal"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Total"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in invoice.lines %}
+          {% include "core/components/rows/invoice_line_row.html" with line=line currency=invoice.currency_id %}
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=7 message="No invoice lines available." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=invoice_lines_pagination %}
+    </div>
+  </section>
+</div>
+{% else %}
+<section class="card">
+  <div class="empty-state">
+    <p class="section-title">{{ "Invoice not found."|portal_t:request }}</p>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

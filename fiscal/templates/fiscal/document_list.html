@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}
+{% block title %}Fiscal documents - Accounting Portal{% endblock %}
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Fiscal / AGT" title="Fiscal documents" copy="Immutable invoice snapshots prepared for Angola fiscal submission." %}
+  <section class="card"><div class="card__body"><form method="get" class="form-grid form-grid--4">
+    <div><label class="field-label" for="fiscal-query">Document</label><input id="fiscal-query" class="field-control" name="q" value="{{ filters.q }}" placeholder="Document number"></div>
+    <div><label class="field-label" for="fiscal-state">Status</label><select id="fiscal-state" class="field-control" name="state"><option value="">All statuses</option><option value="PREPARED" {% if filters.state == 'PREPARED' %}selected{% endif %}>Prepared</option><option value="QUEUED" {% if filters.state == 'QUEUED' %}selected{% endif %}>Queued</option><option value="SUBMITTED" {% if filters.state == 'SUBMITTED' %}selected{% endif %}>Submitted</option><option value="PROCESSING" {% if filters.state == 'PROCESSING' %}selected{% endif %}>Processing</option><option value="ACCEPTED" {% if filters.state == 'ACCEPTED' %}selected{% endif %}>Accepted</option><option value="REJECTED" {% if filters.state == 'REJECTED' %}selected{% endif %}>Rejected</option><option value="OUTCOME_UNKNOWN" {% if filters.state == 'OUTCOME_UNKNOWN' %}selected{% endif %}>Outcome unknown</option></select></div>
+    <div class="field-action"><button class="btn btn--secondary" type="submit">Apply filters</button></div>
+  </form></div></section>
+  <section class="card"><div class="table-wrap table-card"><table class="data-table"><thead><tr><th>Document</th><th>Type</th><th>Odoo ID</th><th>Status</th><th>Prepared</th></tr></thead><tbody>
+    {% for document in documents %}<tr><td><a class="record-title" href="/fiscal/documents/{{ document.id }}">{{ document.document_number }}</a></td><td>{{ document.document_type }}</td><td>{{ document.odoo_invoice_id }}</td><td>{{ document.get_state_display }}</td><td>{{ document.created_at|date:"Y-m-d H:i" }}</td></tr>{% empty %}{% include "core/components/empty_state.html" with colspan=5 message="No fiscal documents have been prepared." %}{% endfor %}
+  </tbody></table>{% include "core/components/table_pagination.html" with pagination=documents_pagination %}</div></section>
+</div>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}{{ client_record.name }} · Platform Admin{% endblock %}
+
+{% block content %}
+{% include "core/components/page_header.html" with eyebrow="Client Configuration" title=client_record.name copy="Tune default behavior for this client without forking the shared codebase." %}
+
+{% if message %}
+<div class="flash flash--success">{{ message }}</div>
+{% endif %}
+{% if error %}
+<div class="flash flash--danger">{{ error }}</div>
+{% endif %}
+
+<nav class="admin-tabs" role="tablist" aria-label="Company configuration">
+  <a class="admin-tab" role="tab" data-admin-tab href="#settings">Settings</a>
+  <a class="admin-tab" role="tab" data-admin-tab href="#databases">Odoo databases</a>
+  <a class="admin-tab" role="tab" data-admin-tab href="#users">Users</a>
+  <a class="admin-tab" role="tab" data-admin-tab href="#releases">Releases</a>
+  <a class="admin-tab" role="tab" data-admin-tab href="#features">Features</a>
+</nav>
+
+<div class="admin-tab-layout mt-6">
+  <section class="card admin-tab-panel" id="settings" data-admin-panel role="tabpanel">
+    {% include "core/components/section_header.html" with title="Client settings" copy="Branding, defaults, and Odoo connection metadata." %}
+    <div class="card__body">
+      <form method="post" class="form-grid">
+        {% csrf_token %}
+        <label class="form-field"><span>Name</span><input type="text" name="name" value="{{ settings_form.name }}"></label>
+        <label class="form-field"><span>Domain</span><input type="text" name="domain" value="{{ settings_form.domain }}"></label>
+        <label class="form-field"><span>Template version</span><input type="text" name="template_version" value="{{ settings_form.template_version }}"></label>
+        <label class="form-field"><span>Default language</span>
+          <select name="default_language">
+            <option value="en" {% if settings_form.default_language == 'en' %}selected{% endif %}>English</option>
+            <option value="pt" {% if settings_form.default_language == 'pt' %}selected{% endif %}>Portuguese</option>
+          </select>
+        </label>
+        <label class="form-field"><span>Default currency</span>
+          <select name="default_currency">
+            <option value="EUR" {% if settings_form.default_currency == 'EUR' %}selected{% endif %}>EUR</option>
+            <option value="USD" {% if settings_form.default_currency == 'USD' %}selected{% endif %}>USD</option>
+            <option value="AOA" {% if settings_form.default_currency == 'AOA' %}selected{% endif %}>AOA</option>
+          </select>
+        </label>
+        <label class="form-field"><span>Company Odoo email</span><input type="email" name="odoo_username" value="{{ settings_form.odoo_username }}" autocomplete="username"></label>
+        <label class="form-field"><span>Company Odoo password</span><input type="password" name="odoo_password" placeholder="Leave blank to keep the encrypted password" autocomplete="new-password"></label>
+        <label class="form-field"><span>Logo URL</span><input type="url" name="logo_url" value="{{ settings_form.logo_url }}"></label>
+        <label class="form-field"><span>Primary color</span><input type="text" name="primary_color" value="{{ settings_form.primary_color }}"></label>
+        <label class="form-field"><span>Accent color</span><input type="text" name="accent_color" value="{{ settings_form.accent_color }}"></label>
+        <label class="toggle-tile"><input type="checkbox" name="is_active" {% if settings_form.is_active %}checked{% endif %}> Active client</label>
+        <label class="toggle-tile"><input type="checkbox" name="is_default" {% if settings_form.is_default %}checked{% endif %}> Default fallback</label>
+        <div class="info-grid">
+          {% include "core/components/info_card.html" with label="Shared Odoo server" value=shared_odoo_url %}
+          {% include "core/components/info_card.html" with label="Effective client" value=client_record.slug %}
+        </div>
+        {% if connection_result %}
+        <div class="info-grid">
+          {% include "core/components/info_card.html" with label="Server version" value=connection_result.server_version %}
+          {% include "core/components/info_card.html" with label="Authenticated UID" value=connection_result.uid %}
+          {% include "core/components/info_card.html" with label="Database" value=connection_result.db %}
+          {% include "core/components/info_card.html" with label="Protocol" value=connection_result.protocol_version %}
+        </div>
+        {% endif %}
+        <div class="actions-row">
+          <button class="btn btn--secondary" type="submit" name="action" value="test_connection">Test Odoo connection</button>
+          <button class="btn btn--primary" type="submit" name="action" value="save_settings">Save settings</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="card admin-tab-panel" id="releases" data-admin-panel role="tabpanel" hidden>
+    {% include "core/components/section_header.html" with title="Release register" copy="Track which template version each client is on." %}
+    <div class="card__body">
+      <form method="post" class="form-grid">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_release">
+        <label class="form-field"><span>Version label</span><input type="text" name="version_label" placeholder="v1.2.0"></label>
+        <label class="form-field"><span>Git reference</span><input type="text" name="git_reference" placeholder="main@abc123"></label>
+        <label class="form-field form-field--full"><span>Release notes</span><textarea name="notes" rows="4"></textarea></label>
+        <label class="toggle-tile"><input type="checkbox" name="is_current"> Mark as current release</label>
+        <div class="actions-row"><button class="btn btn--primary" type="submit">Add release</button></div>
+      </form>
+
+      <div class="table-shell mt-6">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Git ref</th>
+              <th>Current</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for release in releases %}
+            <tr>
+              <td>{{ release.version_label }}</td>
+              <td>{{ release.git_reference|default:"-" }}</td>
+              <td>{% if release.is_current %}Yes{% else %}No{% endif %}</td>
+              <td>{{ release.released_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No releases recorded yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="card admin-tab-panel" id="databases" data-admin-panel role="tabpanel" hidden>
+    {% include "core/components/section_header.html" with title="Odoo database registry" copy="Register company databases with encrypted service credentials." %}
+    <div class="card__body">
+      <form method="post" class="form-grid">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_odoo_database">
+        <label class="form-field"><span>Connection label</span><input name="database_label" placeholder="Primary Odoo"></label>
+        <div class="info-card"><div class="info-card__label">Shared Odoo server</div><div class="info-card__value">{{ shared_odoo_url }}</div></div>
+        <label class="form-field"><span>Database name</span><input name="database_name" required></label>
+        <label class="form-field"><span>Odoo company</span><input name="database_company"></label>
+        <p class="muted-copy">All authorized members use the company Odoo email and encrypted company password.</p>
+        <label class="toggle-tile"><input type="checkbox" name="database_is_default" checked> Default database</label>
+        <div class="actions-row"><button class="btn btn--primary" type="submit">Register database</button></div>
+      </form>
+      <div class="table-shell mt-6"><table class="data-table"><thead><tr><th>Database</th><th>Server</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        {% for database in odoo_databases %}<tr><td>{{ database.database_name }}{% if database.is_default %} · Default{% endif %}</td><td>{{ database.server_url }}</td><td>{% if database.is_active %}Active{% else %}Inactive{% endif %}</td><td><form method="post" class="table-action-row">{% csrf_token %}<input type="hidden" name="action" value="toggle_odoo_database"><input type="hidden" name="registration_id" value="{{ database.id }}"><button class="btn btn--secondary" type="submit">{% if database.is_active %}Disable{% else %}Enable{% endif %}</button>{% if not database.is_default %}<button class="btn btn--secondary" type="submit" name="make_default" value="on">Make default</button>{% endif %}</form></td></tr>{% empty %}<tr><td colspan="4">No Odoo database registered.</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div>
+  </section>
+
+  <section class="card admin-tab-panel" id="users" data-admin-panel role="tabpanel" hidden>
+    {% include "core/components/section_header.html" with title="Company users" copy="Create application users and assign company-scoped roles." %}
+    <div class="card__body">
+      <form method="post" class="form-grid">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_company_user">
+        <label class="form-field"><span>Email</span><input type="email" name="user_email" required></label>
+        <label class="form-field"><span>Temporary password</span><input type="password" name="user_password" required></label>
+        <label class="form-field"><span>Role</span><select name="user_role"><option value="admin">Company administrator</option><option value="accountant">Accountant</option><option value="warehouse">Warehouse manager</option><option value="viewer">Viewer</option></select></label>
+        <label class="toggle-tile"><input type="checkbox" name="user_is_default" checked> Default company for this user</label>
+        <label class="toggle-tile"><input type="checkbox" name="reset_user_password"> Replace password if user exists</label>
+        <div class="actions-row"><button class="btn btn--primary" type="submit">Create and assign user</button></div>
+      </form>
+      <div class="table-shell mt-6"><table class="data-table"><thead><tr><th>User</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        {% for membership in memberships %}<tr><td>{{ membership.user.email|default:membership.user.username }}</td><td>{{ membership.get_role_display }}</td><td>{% if membership.is_active %}Active{% else %}Inactive{% endif %}</td><td><form method="post">{% csrf_token %}<input type="hidden" name="action" value="toggle_company_user"><input type="hidden" name="membership_id" value="{{ membership.id }}"><button class="btn btn--secondary" type="submit">{% if membership.is_active %}Disable{% else %}Enable{% endif %}</button></form></td></tr>{% empty %}<tr><td colspan="4">No users assigned.</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div>
+  </section>
+
+<section class="card admin-tab-panel" id="features" data-admin-panel role="tabpanel" hidden>
+  {% include "core/components/section_header.html" with title="Feature toggles" copy="Enable or disable flows for this client without cloning the application." %}
+  <div class="card__body">
+    <form method="post" class="feature-grid">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save_features">
+      {% for feature in features %}
+      <label class="toggle-tile">
+        <input type="checkbox" name="feature_keys" value="{{ feature.key }}" {% if feature_map|attr:feature.key %}checked{% endif %}>
+        <span>
+          <strong>{{ feature.name }}</strong><br>
+          <span class="muted-copy">{{ feature.module }} · {{ feature.description }}</span>
+        </span>
+      </label>
+      {% endfor %}
+      <div class="actions-row"><button class="btn btn--primary" type="submit">Save features</button></div>
+    </form>
+  </div>
+</section>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% load ui_extras %}
+{% if messages or message or error %}
+<div class="flash-stack" aria-label="Action notifications" data-flash-stack>
+  {% for django_message in messages %}
+  <article class="flash{% if 'error' in django_message.tags %} flash--danger{% elif 'warning' in django_message.tags %} flash--warning{% elif 'info' in django_message.tags %} flash--info{% else %} flash--success{% endif %}"
+           {% if 'error' in django_message.tags %}role="alert"{% else %}role="status"{% endif %}
+           {% if 'error' not in django_message.tags and 'warning' not in django_message.tags %}data-flash-timeout="5000"{% endif %}>
+    <span class="flash__icon" aria-hidden="true">{% if 'error' in django_message.tags %}×{% elif 'warning' in django_message.tags %}!{% else %}✓{% endif %}</span>
+    <span class="flash__content"><strong>{% if 'error' in django_message.tags %}Action failed{% elif 'warning' in django_message.tags %}Action needs attention{% else %}Action completed{% endif %}</strong><span>{{ django_message }}</span></span>
+    <button class="flash__dismiss" type="button" data-flash-dismiss aria-label="Dismiss notification">×</button>
+  </article>
+  {% endfor %}
+  {% if message %}
+  <article class="flash flash--success" role="status" data-flash-timeout="5000"><span class="flash__icon" aria-hidden="true">✓</span><span class="flash__content"><strong>Action completed</strong><span>{{ message|portal_t:request }}</span></span><button class="flash__dismiss" type="button" data-flash-dismiss aria-label="Dismiss notification">×</button></article>
+  {% endif %}
+  {% if error %}
+  <article class="flash flash--danger" role="alert"><span class="flash__icon" aria-hidden="true">×</span><span class="flash__content"><strong>Action failed</strong><span>{{ error|portal_t:request }}</span></span><button class="flash__dismiss" type="button" data-flash-dismiss aria-label="Dismiss notification">×</button></article>
+  {% endif %}
+</div>
+{% endif %}

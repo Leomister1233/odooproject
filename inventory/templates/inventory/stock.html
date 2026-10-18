@@ -1,0 +1,53 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Stock On Hand{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Inventory / Stock on hand" title="Stock positions" copy="Review stock quants by product and location." action_href="/inventory/transfers/create" action_label="Create transfer" action_variant="primary" %}
+
+  <section class="card">
+    {% include "core/components/section_header.html" with title="Filter stock" copy="Narrow stock visibility by product or warehouse location." %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_select.html" with label="Product" name="product_id" options=products value_key="id" label_key="name" empty_label="All products" selected_value=filters.product_id %}
+        {% include "core/components/field_select.html" with label="Location" name="location_id" options=locations value_key="id" label_key="complete_name" empty_label="All locations" selected_value=filters.location_id %}
+        {% include "core/components/field_input.html" with label="Minimum available" name="minimum_available" type="number" step="0.01" value=filters.minimum_available placeholder="0.00" %}
+        <div class="field-action">{% include "core/components/button.html" with label="Apply filters" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Stock positions" copy="Current stock balances by product and location." chip_1="Rows" chip_1_value=rows_pagination.total_count %}
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Product"|portal_t:request }}</th>
+            <th>{{ "Location"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Quantity"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Reserved"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Available"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td><span class="record-title">{{ row.product_id.1|default:"-" }}</span></td>
+            <td><span class="cell-truncate">{{ row.location_id.1|default:"-" }}</span></td>
+            <td class="is-numeric">{{ row.quantity|default:0|floatformat:2 }}</td>
+            <td class="is-numeric">{{ row.reserved_quantity|default:0|floatformat:2 }}</td>
+            <td class="is-numeric">{{ row.available_quantity|default:0|floatformat:2 }}</td>
+          </tr>
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=5 message="No stock quants matched the current filters." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=rows_pagination %}
+    </div>
+  </section>
+</div>
+{% endblock %}

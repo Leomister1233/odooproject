@@ -1,0 +1,27 @@
+{% extends "core/base.html" %}
+
+{% block title %}{% if section == "users" %}Users{% elif section == "features" %}Features{% elif section == "releases" %}Releases{% else %}Settings{% endif %} - Platform Admin{% endblock %}
+{% block body_class %}app-page page-platform-admin{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% if section == "users" %}
+    {% include "core/components/page_header.html" with eyebrow="Platform Administration" title="Users" copy="Review company memberships and open the owning company to manage access." %}
+    <section class="card">
+      <div class="card__header"><div><h2 class="section-title">Company memberships</h2><p class="section-copy">Every record is scoped to a registered company.</p></div><form method="get" class="registry-search" role="search"><label class="sr-only" for="user-search">Search users</label><input id="user-search" class="field-control" type="search" name="q" value="{{ query }}" placeholder="User or company"><button class="icon-button" type="submit" aria-label="Search users" title="Search users">⌕</button></form></div>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th>User</th><th>Company</th><th>Role</th><th>Status</th><th class="is-center">Manage</th></tr></thead><tbody>{% for membership in records %}<tr><td><span class="record-title">{{ membership.user.email|default:membership.user.username }}</span></td><td>{{ membership.company.name }}</td><td>{{ membership.get_role_display }}</td><td>{% if membership.is_active %}Active{% else %}Inactive{% endif %}</td><td class="is-center"><a class="icon-button" href="/platform-admin/{{ membership.company.slug }}#users" aria-label="Manage {{ membership.user.email|default:membership.user.username }}" title="Manage membership">→</a></td></tr>{% empty %}{% include "core/components/empty_state.html" with colspan=5 message="No company memberships found." %}{% endfor %}</tbody></table>{% include "core/components/table_pagination.html" with pagination=pagination %}</div>
+    </section>
+  {% elif section == "features" %}
+    {% include "core/components/page_header.html" with eyebrow="Platform Administration" title="Features" copy="Review the shared feature catalogue. Company-specific controls remain on each company record." %}
+    <section class="card"><div class="table-wrap"><table class="data-table"><thead><tr><th>Feature</th><th>Module</th><th>Default</th><th>Enabled overrides</th><th>Navigation</th></tr></thead><tbody>{% for feature in records %}<tr><td><span class="record-title">{{ feature.name }}</span><span class="record-meta">{{ feature.description }}</span></td><td>{{ feature.module }}</td><td>{% if feature.default_enabled %}Enabled{% else %}Disabled{% endif %}</td><td>{{ feature.company_count }}</td><td>{{ feature.nav_title|default:"Not shown" }}</td></tr>{% empty %}{% include "core/components/empty_state.html" with colspan=5 message="No features are registered." %}{% endfor %}</tbody></table>{% include "core/components/table_pagination.html" with pagination=pagination %}</div></section>
+  {% elif section == "releases" %}
+    {% include "core/components/page_header.html" with eyebrow="Platform Administration" title="Releases" copy="Review versions assigned to client workspaces. Add releases from the relevant company record." %}
+    <section class="card"><div class="table-wrap"><table class="data-table"><thead><tr><th>Version</th><th>Company</th><th>Git reference</th><th>Current</th><th>Released</th><th class="is-center">Manage</th></tr></thead><tbody>{% for release in records %}<tr><td class="record-title">{{ release.version_label }}</td><td>{{ release.client.name }}</td><td>{{ release.git_reference|default:"-" }}</td><td>{% if release.is_current %}Yes{% else %}No{% endif %}</td><td>{{ release.released_at|date:"d M Y, H:i" }}</td><td class="is-center"><a class="icon-button" href="/platform-admin/{{ release.client.slug }}#releases" aria-label="Manage releases for {{ release.client.name }}" title="Manage releases">→</a></td></tr>{% empty %}{% include "core/components/empty_state.html" with colspan=6 message="No releases have been recorded." %}{% endfor %}</tbody></table>{% include "core/components/table_pagination.html" with pagination=pagination %}</div></section>
+  {% else %}
+    {% include "core/components/page_header.html" with eyebrow="Platform Administration" title="Settings" copy="Review shared platform configuration and synchronize managed metadata." %}
+    <section class="stats-grid"><article class="card"><div class="card__body"><p class="page-eyebrow">Companies</p><p class="page-title">{{ client_count }}</p></div></article><article class="card"><div class="card__body"><p class="page-eyebrow">Features</p><p class="page-title">{{ feature_count }}</p></div></article></section>
+    <section class="card"><div class="card__header"><div><h2 class="section-title">Shared Odoo endpoint</h2><p class="section-copy">Database and company credentials are resolved per client.</p></div></div><div class="card__body"><p class="record-title">{{ shared_odoo_url }}</p></div></section>
+    <section class="card"><div class="card__header"><div><h2 class="section-title">Feature catalogue</h2><p class="section-copy">Create any missing managed feature definitions without changing existing client overrides.</p></div><form method="post">{% csrf_token %}<input type="hidden" name="action" value="sync_features"><button class="btn btn--primary" type="submit">Synchronize catalogue</button></form></div></section>
+  {% endif %}
+</div>
+{% endblock %}

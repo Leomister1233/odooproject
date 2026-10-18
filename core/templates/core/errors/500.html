@@ -1,0 +1,9 @@
+{% extends "core/base.html" %}
+{% block title %}Service unavailable{% endblock %}
+{% block content %}
+<section class="card empty-state" role="alert">
+  <p class="page-eyebrow">500</p>
+  <h1 class="page-title">We could not complete the request</h1>
+  <p class="page-copy">The service encountered an unexpected problem. Your data was not intentionally changed. Try again shortly or contact support.</p>
+</section>
+{% endblock %}

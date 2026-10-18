@@ -1,0 +1,20 @@
+{% load ui_extras %}
+<div class="card__header">
+  <div>
+    <h2 class="section-title">{{ title|portal_t:request }}</h2>
+    {% if copy %}
+    <p class="section-copy">{{ copy|portal_t:request }}</p>
+    {% endif %}
+  </div>
+  {% if action_href and action_label %}
+  <div class="actions-row">
+    {% include "core/components/button.html" with href=action_href label=action_label variant=action_variant %}
+  </div>
+  {% elif action_type and action_label %}
+  <div class="actions-row">
+    {% include "core/components/button.html" with type=action_type id_attr=action_id label=action_label variant=action_variant extra_classes=action_extra_classes %}
+  </div>
+  {% elif action_content %}
+  <div class="actions-row">{{ action_content }}</div>
+  {% endif %}
+</div>

@@ -1,0 +1,63 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Payments - Accounting Portal{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Payments / Receivables" title="Customer payments" copy="Review payment records created in Odoo and trace how receivables are being settled across customer accounts." stat_label="Loaded" stat_value=payments_pagination.total_count %}
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Payments register" copy="Customer payment records ordered from most recent to oldest." action_href="/vendor-bills" action_label="Vendor bills" action_variant="secondary" chip_1="Receivables" %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_input.html" with label="Payment" name="payment_name" value=filters.payment_name placeholder="Payment reference" %}
+        {% include "core/components/field_input.html" with label="Partner" name="partner" value=filters.partner placeholder="Partner" %}
+        <div>
+          <label class="field-label">{{ "Type"|portal_t:request }}</label>
+          <select name="payment_type" class="field-control">
+            <option value="">{{ "All types"|portal_t:request }}</option>
+            {% for value in payment_types %}
+            <option value="{{ value }}" {% if filters.payment_type == value %}selected{% endif %}>{{ value|portal_t:request }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="field-label">{{ "State"|portal_t:request }}</label>
+          <select name="state" class="field-control">
+            <option value="">{{ "All states"|portal_t:request }}</option>
+            {% for value in payment_states %}
+            <option value="{{ value }}" {% if filters.state == value %}selected{% endif %}>{{ value|portal_t:request }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% include "core/components/field_input.html" with label="Date from" name="date_from" type="date" value=filters.date_from %}
+        {% include "core/components/field_input.html" with label="Date to" name="date_to" type="date" value=filters.date_to %}
+        <div class="field-action">{% include "core/components/button.html" with label="Filter payments" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Payment"|portal_t:request }}</th>
+            <th>{{ "Partner"|portal_t:request }}</th>
+            <th>{{ "Date"|portal_t:request }}</th>
+            <th>{{ "Type"|portal_t:request }}</th>
+            <th>{{ "State"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Amount"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          {% include "core/components/rows/payment_row.html" with payment=p %}
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=6 message="No payments found." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=payments_pagination %}
+    </div>
+  </section>
+</div>
+{% endblock %}

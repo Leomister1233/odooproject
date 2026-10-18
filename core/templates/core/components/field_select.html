@@ -1,0 +1,14 @@
+{% load ui_extras %}
+<div{% if wrapper_class %} class="{{ wrapper_class }}"{% endif %}>
+  <label class="field-label">{{ label|portal_t:request }}</label>
+  <select name="{{ name }}" class="field-control{% if input_class %} {{ input_class }}{% endif %}" {% if required %}required{% endif %}>
+    {% if empty_label %}
+    <option value="">{{ empty_label|portal_t:request }}</option>
+    {% endif %}
+    {% for option in options %}
+    {% with option_value=option|attr:value_key option_label=option|attr:label_key %}
+    <option value="{{ option_value }}"{% if selected_value|stringformat:"s" == option_value|stringformat:"s" %} selected{% endif %}>{{ option_label }}</option>
+    {% endwith %}
+    {% endfor %}
+  </select>
+</div>

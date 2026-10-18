@@ -1,0 +1,129 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow=page_eyebrow title=page_title copy=page_copy action_href="/inventory/transfers/create?operation="|add:operation_code action_label="Create transfer" action_variant="primary" secondary_action_href="/inventory/transfers" secondary_action_label="All transfers" %}
+
+  <section class="stats-grid">
+    {% include "core/components/kpi_card.html" with label="Documents" value=summary.total|default:0 note="Transfer documents currently loaded for this operation." %}
+    {% include "core/components/kpi_card.html" with label="Draft" value=summary.draft|default:0 note="Waiting for confirmation in Odoo." %}
+    {% include "core/components/kpi_card.html" with label="Ready" value=summary.ready|default:0 note="Inventory assigned and ready to process." %}
+    {% include "core/components/kpi_card.html" with label="Done" value=summary.done|default:0 note="Completed warehouse documents." %}
+    {% include "core/components/kpi_card.html" with label="With Counterparty" value=summary.partner_document_count|default:0 note="Documents carrying a customer or vendor contact." %}
+    {% include "core/components/kpi_card.html" with label="With Source Doc" value=summary.source_document_count|default:0 note="Documents already linked to a source reference or origin." %}
+  </section>
+
+  <section class="page-grid-detail">
+    <article class="card">
+      {% include "core/components/section_header.html" with title="Filter queue" copy="Restrict the operation queue by transfer state, counterparty, or source document." %}
+      <div class="card__body">
+        <form method="get" class="form-grid form-grid--4">
+          <div>
+            <label class="field-label">{{ "State"|portal_t:request }}</label>
+            <select name="state" class="field-control">
+              <option value="">{{ "All states"|portal_t:request }}</option>
+              <option value="draft" {% if filters.state == 'draft' %}selected{% endif %}>{{ "Draft"|portal_t:request }}</option>
+              <option value="confirmed" {% if filters.state == 'confirmed' %}selected{% endif %}>{{ "confirmed"|portal_t:request }}</option>
+              <option value="assigned" {% if filters.state == 'assigned' %}selected{% endif %}>{{ "Ready"|portal_t:request }}</option>
+              <option value="done" {% if filters.state == 'done' %}selected{% endif %}>{{ "Done"|portal_t:request }}</option>
+              <option value="cancel" {% if filters.state == 'cancel' %}selected{% endif %}>{{ "Cancelled"|portal_t:request }}</option>
+            </select>
+          </div>
+          {% include "core/components/field_select.html" with label="Counterparty" name="partner_id" options=partner_options value_key="id" label_key="name" empty_label="All counterparties" selected_value=filters.partner_id %}
+          {% include "core/components/field_input.html" with label="Source document" name="origin" value=filters.origin placeholder="PO, shipment, manual reference" %}
+          {% include "core/components/field_input.html" with label="Reference" name="reference" value=filters.reference placeholder="Transfer reference" %}
+          {% include "core/components/field_input.html" with label="Scheduled from" name="scheduled_from" type="date" value=filters.scheduled_from %}
+          {% include "core/components/field_input.html" with label="Scheduled to" name="scheduled_to" type="date" value=filters.scheduled_to %}
+          <div class="field-action">{% include "core/components/button.html" with label="Apply filters" type="submit" variant="secondary" %}</div>
+        </form>
+      </div>
+    </article>
+
+    <article class="card">
+      {% include "core/components/section_header.html" with title="Counterparties and operation types" copy="Available warehouse types plus the most frequent counterparties in the current queue." %}
+      <div class="card__body">
+        <div class="page-stack">
+          <div class="info-grid">
+            {% for picking_type in summary.types %}
+            <div class="info-card">
+              <p class="info-card__label">{{ picking_type.code|default:"-" }}</p>
+              <p class="info-card__value">{{ picking_type.name|default:"-" }}</p>
+              <p class="record-meta">{{ picking_type.warehouse_id.1|default:"No warehouse"|portal_t:request }}</p>
+            </div>
+            {% empty %}
+            <div class="info-card">
+              <p class="info-card__label">{{ "Unavailable"|portal_t:request }}</p>
+              <p class="info-card__value">{{ "No picking types are configured for this operation."|portal_t:request }}</p>
+            </div>
+            {% endfor %}
+          </div>
+
+          <div class="table-wrap table-card table-card--embedded">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>{{ "Counterparty"|portal_t:request }}</th>
+                  <th class="is-numeric">{{ "Documents"|portal_t:request }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for partner in partner_rows %}
+                <tr>
+                  <td><span class="record-title">{{ partner.name }}</span></td>
+                  <td class="is-numeric">{{ partner.count }}</td>
+                </tr>
+                {% empty %}
+                {% include "core/components/empty_state.html" with colspan=2 message="No counterparty-linked documents in the current queue." %}
+                {% endfor %}
+              </tbody>
+            </table>
+            {% include "core/components/table_pagination.html" with pagination=partners_pagination %}
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title=page_title copy="Transfer documents for the selected warehouse operation." chip_1="Rows" chip_1_value=transfers_pagination.total_count %}
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Reference"|portal_t:request }}</th>
+            <th>{{ "Operation Type"|portal_t:request }}</th>
+            <th>{{ "Counterparty"|portal_t:request }}</th>
+            <th>{{ "Origin"|portal_t:request }}</th>
+            <th>{{ "From"|portal_t:request }}</th>
+            <th>{{ "To"|portal_t:request }}</th>
+            <th>{{ "Scheduled"|portal_t:request }}</th>
+            <th>{{ "Completed"|portal_t:request }}</th>
+            <th>{{ "State"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for transfer in transfers %}
+          <tr>
+            <td><a href="/inventory/transfers/{{ transfer.id }}" class="record-title">{{ transfer.name|default:"-" }}</a></td>
+            <td>{{ transfer.picking_type_id.1|default:transfer.picking_type_code|default:"-" }}</td>
+            <td>{{ transfer.partner_id.1|default:"-" }}</td>
+            <td>{{ transfer.origin|default:"-" }}</td>
+            <td><span class="cell-truncate">{{ transfer.location_id.1|default:"-" }}</span></td>
+            <td><span class="cell-truncate">{{ transfer.location_dest_id.1|default:"-" }}</span></td>
+            <td>{{ transfer.scheduled_date|default:"-" }}</td>
+            <td>{{ transfer.date_done|default:"-" }}</td>
+            <td>{{ transfer.state|default:"-"|portal_t:request }}</td>
+          </tr>
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=9 message="No transfer documents matched the current filters." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=transfers_pagination %}
+    </div>
+  </section>
+</div>
+{% endblock %}

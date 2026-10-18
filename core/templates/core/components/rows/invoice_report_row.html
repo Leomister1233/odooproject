@@ -1,0 +1,11 @@
+{% load ui_extras %}
+<tr>
+  <td><span class="record-title">{{ invoice.name|default:"-" }}</span></td>
+  <td><span class="cell-truncate">{{ invoice.partner_id.1|default:"-" }}</span></td>
+  <td>{{ invoice.invoice_date|default:"-" }}</td>
+  <td>{{ invoice.invoice_date_due|default:"-" }}</td>
+  <td>{{ invoice.state|default:"-"|portal_t:request }}</td>
+  <td>{{ invoice.payment_state|default:"-"|portal_t:request }}</td>
+  <td class="is-numeric">{{ invoice.amount_residual|money:invoice.currency_id }}</td>
+  <td class="is-numeric">{{ invoice.amount_total|money:invoice.currency_id }}</td>
+</tr>

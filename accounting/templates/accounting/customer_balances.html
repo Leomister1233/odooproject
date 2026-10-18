@@ -1,0 +1,48 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Customer Balances - Accounting Portal{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Reporting / Customer exposure" title="Customer balances" copy="Outstanding balance analysis by customer based on posted customer invoices and residual balances." %}
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Balance by customer" copy="Review how invoiced value, estimated paid amount, and open balance distribute across customers." action_href="/reports/invoice-status/" action_label="Invoice status report" action_variant="secondary" %}
+    <div class="card__body">
+      <form method="get" class="form-grid form-grid--4">
+        {% include "core/components/field_input.html" with label="Customer" name="customer" value=filters.customer placeholder="Customer" %}
+        {% include "core/components/field_input.html" with label="Minimum outstanding" name="minimum_outstanding" type="number" step="0.01" value=filters.minimum_outstanding placeholder="0.00" %}
+        <div class="field-action">{% include "core/components/button.html" with label="Filter balances" type="submit" variant="secondary" %}</div>
+      </form>
+    </div>
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Customer"|portal_t:request }}</th>
+            <th class="is-center">{{ "Invoices"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Total Invoiced"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Total Paid"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Outstanding"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td><span class="record-title">{{ row.customer|default:"-" }}</span></td>
+            <td class="is-center">{{ row.invoice_count }}</td>
+            <td class="is-numeric">{{ row.total_invoiced|money:currency }}</td>
+            <td class="is-numeric">{{ row.total_paid|money:currency }}</td>
+            <td class="is-numeric">{{ row.outstanding_balance|money:currency }}</td>
+          </tr>
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=5 message="No customer balance data available." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=rows_pagination %}
+    </div>
+  </section>
+</div>
+{% endblock %}

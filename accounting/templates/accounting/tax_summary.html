@@ -1,0 +1,26 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Tax Summary - Accounting Portal{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Reporting / Tax" title="Tax summary" copy="Invoice-level tax rollup for management visibility over posted customer invoices." %}
+
+  <section class="stats-grid">
+    {% include "core/components/kpi_card.html" with label="Untaxed" value=summary.total_untaxed|money:summary.currency note="Sum of untaxed posted invoice base." %}
+    {% include "core/components/kpi_card.html" with label="Tax" value=summary.total_tax|money:summary.currency note="Tax amount on posted invoices." %}
+    {% include "core/components/kpi_card.html" with label="Gross" value=summary.total_amount|money:summary.currency note="Total invoice amount including tax." %}
+    {% include "core/components/kpi_card.html" with label="Approx. rate" value=summary.tax_rate_approx|default:0|floatformat:2|add:"%" note="Approximate tax rate over untaxed base." %}
+  </section>
+
+  <section class="card">
+    {% include "core/components/section_header.html" with title="Monthly tax totals" copy="Tax totals grouped by invoice month for the last reported periods." %}
+    <div class="card__body">
+    <div class="chart-frame">
+      <canvas id="taxChart" role="img" aria-label="Monthly tax totals chart" data-labels='[{% for row in summary.monthly_tax %}"{{ row.month }}"{% if not forloop.last %},{% endif %}{% endfor %}]' data-values='[{% for row in summary.monthly_tax %}{{ row.amount }}{% if not forloop.last %},{% endif %}{% endfor %}]'></canvas>
+    </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

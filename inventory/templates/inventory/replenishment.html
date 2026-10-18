@@ -1,0 +1,125 @@
+{% extends "core/base.html" %}
+{% load ui_extras %}
+
+{% block title %}Inventory Replenishment{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  {% include "core/components/page_header.html" with eyebrow="Inventory / Replenishment" title="Reordering rules" copy="Manage Odoo replenishment rules and trigger procurement actions from the same inventory shell." stat_label="Loaded" stat_value=rows_pagination.total_count %}
+
+  <section class="page-grid-detail">
+    <article class="card">
+      {% include "core/components/section_header.html" with title="Create rule" copy="Register a new reordering rule with warehouse, location, thresholds, and trigger mode." %}
+      <div class="card__body">
+        <form method="post" class="form-grid form-grid--4">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="create">
+          {% include "core/components/field_select.html" with label="Product" name="product_id" options=products value_key="id" label_key="name" required=True %}
+          {% include "core/components/field_select.html" with label="Location" name="location_id" options=locations value_key="id" label_key="complete_name" required=True %}
+          <div>
+            <label class="field-label">{{ "Trigger"|portal_t:request }}</label>
+            <select name="trigger" class="field-control" required>
+              <option value="auto">{{ "Auto"|portal_t:request }}</option>
+              <option value="manual">{{ "Manual"|portal_t:request }}</option>
+            </select>
+          </div>
+          {% include "core/components/field_input.html" with label="Minimum qty" name="product_min_qty" type="number" step="0.01" required=True %}
+          {% include "core/components/field_input.html" with label="Maximum qty" name="product_max_qty" type="number" step="0.01" required=True %}
+          <div class="field-action span-2">{% include "core/components/button.html" with label="Create rule" type="submit" variant="primary" %}</div>
+        </form>
+      </div>
+    </article>
+
+    <article class="card">
+      {% include "core/components/section_header.html" with title="Filter rules" copy="Limit the rule register by location and replenishment mode." %}
+      <div class="card__body">
+        <form method="get" class="form-grid form-grid--4">
+          {% include "core/components/field_select.html" with label="Location" name="location_id" options=locations value_key="id" label_key="complete_name" empty_label="All locations" selected_value=filters.location_id %}
+          <div>
+            <label class="field-label">{{ "Trigger"|portal_t:request }}</label>
+            <select name="trigger" class="field-control">
+              <option value="">{{ "All triggers"|portal_t:request }}</option>
+              <option value="auto" {% if filters.trigger == 'auto' %}selected{% endif %}>{{ "Auto"|portal_t:request }}</option>
+              <option value="manual" {% if filters.trigger == 'manual' %}selected{% endif %}>{{ "Manual"|portal_t:request }}</option>
+            </select>
+          </div>
+          {% include "core/components/field_input.html" with label="Product" name="product" value=filters.product placeholder="Product" %}
+          {% include "core/components/field_input.html" with label="Warehouse" name="warehouse" value=filters.warehouse placeholder="Warehouse" %}
+          <div class="field-action">{% include "core/components/button.html" with label="Apply filters" type="submit" variant="secondary" %}</div>
+        </form>
+      </div>
+    </article>
+  </section>
+
+  <section class="card">
+    {% include "core/components/table_header.html" with title="Rule register" copy="Reordering rules with inline update and replenish actions." chip_1="Rows" chip_1_value=rows_pagination.total_count action_href="/inventory/products" action_label="Open products" action_variant="secondary" %}
+    <div class="table-wrap table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ "Product"|portal_t:request }}</th>
+            <th>{{ "Warehouse"|portal_t:request }}</th>
+            <th>{{ "Location"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "Forecast"|portal_t:request }}</th>
+            <th class="is-numeric">{{ "To order"|portal_t:request }}</th>
+            <th>{{ "Trigger"|portal_t:request }}</th>
+            <th>{{ "Thresholds"|portal_t:request }}</th>
+            <th>{{ "Actions"|portal_t:request }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td><span class="record-title">{{ row.product_id.1|default:"-" }}</span></td>
+            <td>{{ row.warehouse_id.1|default:"-" }}</td>
+            <td><span class="cell-truncate">{{ row.location_id.1|default:"-" }}</span></td>
+            <td class="is-numeric">{{ row.qty_forecast|default:0|floatformat:2 }}</td>
+            <td class="is-numeric">{{ row.qty_to_order|default:0|floatformat:2 }}</td>
+            <td>{{ row.trigger|default:"-"|portal_t:request }}</td>
+            <td>
+              <span class="record-title">{{ row.product_min_qty|default:0|floatformat:2 }} - {{ row.product_max_qty|default:0|floatformat:2 }}</span>
+              <span class="record-meta">{{ "Min / Max"|portal_t:request }}</span>
+            </td>
+            <td>
+              <div class="table-actions">
+                <form method="post" class="table-form table-form--stacked">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update">
+                  <input type="hidden" name="rule_id" value="{{ row.id }}">
+                  <div class="table-form__row">
+                    <input type="number" step="0.01" name="product_min_qty" value="{{ row.product_min_qty|default:0 }}" class="field-input table-form__input" required>
+                    <input type="number" step="0.01" name="product_max_qty" value="{{ row.product_max_qty|default:0 }}" class="field-input table-form__input" required>
+                  </div>
+                  <div class="table-form__row">
+                    <select name="trigger" class="field-control table-form__input">
+                      <option value="auto" {% if row.trigger == 'auto' %}selected{% endif %}>{{ "Auto"|portal_t:request }}</option>
+                      <option value="manual" {% if row.trigger == 'manual' %}selected{% endif %}>{{ "Manual"|portal_t:request }}</option>
+                    </select>
+                    <button type="submit" class="btn btn--secondary">{{ "Save"|portal_t:request }}</button>
+                  </div>
+                </form>
+                <form method="post" class="table-action-row">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="replenish">
+                  <input type="hidden" name="rule_id" value="{{ row.id }}">
+                  <button type="submit" class="btn btn--primary">{{ "Replenish"|portal_t:request }}</button>
+                </form>
+                <form method="post" class="table-action-row">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="rule_id" value="{{ row.id }}">
+                  <button type="submit" class="btn btn--secondary">{{ "Delete"|portal_t:request }}</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          {% include "core/components/empty_state.html" with colspan=8 message="No reordering rules available." %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% include "core/components/table_pagination.html" with pagination=rows_pagination %}
+    </div>
+  </section>
+</div>
+{% endblock %}
