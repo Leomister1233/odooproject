@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: prototype-odoo-postgres
+    environment:
+      POSTGRES_DB: ${ODOO_POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${ODOO_POSTGRES_USER:-odoo}
+      POSTGRES_PASSWORD: ${ODOO_POSTGRES_PASSWORD:-odoo_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  odoo:
+    image: odoo:18
+    container_name: prototype-odoo
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8069:8069"
+    environment:
+      HOST: postgres
+      USER: ${ODOO_POSTGRES_USER:-odoo}
+      PASSWORD: ${ODOO_POSTGRES_PASSWORD:-odoo_password}
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - ./config/odoo.conf:/etc/odoo/odoo.conf:ro
+    restart: unless-stopped
+
+  web:
+    image: ${WEB_IMAGE:-odoo-prototype:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: prototype-web
+    depends_on:
+      postgres:
+        condition: service_healthy
+      odoo:
+        condition: service_started
+    ports:
+      - "${WEB_BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-8000}:8000"
+    environment:
+      DJANGO_DEBUG: "false"
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in .env}
+      CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:-}
+      POSTGRES_DB: ${ODOO_POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${ODOO_POSTGRES_USER:-odoo}
+      POSTGRES_PASSWORD: ${ODOO_POSTGRES_PASSWORD:-odoo_password}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      ODOO_SHARED_URL: http://odoo:8069
+      EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
+      EMAIL_HOST: ${EMAIL_HOST:-localhost}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-true}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-Accounting Portal <no-reply@localhost>}
+      PASSWORD_RESET_TIMEOUT: ${PASSWORD_RESET_TIMEOUT:-3600}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/login', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+volumes:
+  postgres_data:
+  odoo_data:

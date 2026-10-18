@@ -1,0 +1,77 @@
+name: accounting-portal
+
+x-app-environment: &app-environment
+  DJANGO_DEBUG: "false"
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in .env.production}
+  CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:?Set CREDENTIAL_ENCRYPTION_KEY in .env.production}
+  DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?Set DJANGO_ALLOWED_HOSTS in .env.production}
+  DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:?Set DJANGO_CSRF_TRUSTED_ORIGINS in .env.production}
+  DJANGO_SECURE_COOKIES: ${DJANGO_SECURE_COOKIES:-true}
+  DJANGO_SECURE_SSL_REDIRECT: ${DJANGO_SECURE_SSL_REDIRECT:-true}
+  DJANGO_HSTS_SECONDS: ${DJANGO_HSTS_SECONDS:-31536000}
+  POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env.production}
+  POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env.production}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
+  POSTGRES_HOST: ${POSTGRES_HOST:-host.docker.internal}
+  POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+  ODOO_SHARED_URL: http://${ODOO_HOST:-host.docker.internal}:${ODOO_PORT:-8069}
+  EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.smtp.EmailBackend}
+  EMAIL_HOST: ${EMAIL_HOST:?Set EMAIL_HOST in .env.production}
+  EMAIL_PORT: ${EMAIL_PORT:-587}
+  EMAIL_HOST_USER: ${EMAIL_HOST_USER:?Set EMAIL_HOST_USER in .env.production}
+  EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:?Set EMAIL_HOST_PASSWORD in .env.production}
+  EMAIL_USE_TLS: ${EMAIL_USE_TLS:-true}
+  DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:?Set DEFAULT_FROM_EMAIL in .env.production}
+  PASSWORD_RESET_TIMEOUT: ${PASSWORD_RESET_TIMEOUT:-3600}
+  AGT_ENVIRONMENT: ${AGT_ENVIRONMENT:-homologation}
+  AGT_BASE_URL: ${AGT_BASE_URL:-https://sifphml.minfin.gov.ao/sigt/fe/v1}
+  AGT_USERNAME: ${AGT_USERNAME:-}
+  AGT_PASSWORD: ${AGT_PASSWORD:-}
+  AGT_SCHEMA_VERSION: ${AGT_SCHEMA_VERSION:-2.0}
+  AGT_PRODUCT_ID: ${AGT_PRODUCT_ID:-}
+  AGT_PRODUCT_VERSION: ${AGT_PRODUCT_VERSION:-}
+  AGT_SOFTWARE_VALIDATION_NUMBER: ${AGT_SOFTWARE_VALIDATION_NUMBER:-}
+  AGT_PRODUCER_KEY_REFERENCE: ${AGT_PRODUCER_KEY_REFERENCE:-}
+  AGT_CONNECT_TIMEOUT_SECONDS: ${AGT_CONNECT_TIMEOUT_SECONDS:-10}
+  AGT_READ_TIMEOUT_SECONDS: ${AGT_READ_TIMEOUT_SECONDS:-30}
+  AGT_SUBMISSIONS_ENABLED: ${AGT_SUBMISSIONS_ENABLED:-false}
+  AGT_ALLOW_PRODUCTION: ${AGT_ALLOW_PRODUCTION:-false}
+
+x-web-base: &web-base
+  image: ${WEB_IMAGE:?Set WEB_IMAGE to an immutable sha tag}
+  pull_policy: always
+  environment: *app-environment
+  networks: [edge]
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  init: true
+  read_only: true
+  tmpfs:
+    - /tmp:size=128m,mode=1777
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+services:
+  migrate:
+    <<: *web-base
+    command: ["python", "manage.py", "migrate", "--noinput"]
+    restart: "no"
+
+  web:
+    <<: *web-base
+    command: ["gunicorn", "odoo_web.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "${GUNICORN_WORKERS:-3}", "--timeout", "${GUNICORN_TIMEOUT:-120}", "--access-logfile", "-", "--error-logfile", "-"]
+    ports:
+      - "${WEB_BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-8000}:8000"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; from urllib.request import Request,urlopen; host=os.environ['DJANGO_ALLOWED_HOSTS'].split(',')[0]; urlopen(Request('http://127.0.0.1:8000/login', headers={'Host':host,'X-Forwarded-Proto':'https'}), timeout=5)"]
+      interval: 15s
+      timeout: 7s
+      retries: 8
+      start_period: 30s
+
+networks:
+  edge:
